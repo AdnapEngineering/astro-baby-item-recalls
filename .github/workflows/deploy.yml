@@ -41,6 +41,10 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
+      # NEW: Create the GitHub Pages deployment
+      - name: Setup GitHub Pages
+        uses: actions/configure-pages@v4
+
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
