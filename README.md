@@ -1,48 +1,23 @@
-# astro-baby-item-recalls
+# Astro Baby Item Recalls
 
-Astro project for a GitHub Pages site listing recent baby item recalls.
+A simple web application built with Astro that fetches product recall data from the U.S. Consumer Product Safety Commission (CPSC) API and allows users to search and filter the recalls.
 
-```sh
-npm create astro@latest -- --template basics
-```
+This project aims to provide a user experience similar to the CPSC's SaferProducts.gov Public Search, focusing specifically on baby item recalls.
 
-> 🧑‍🚀 **Seasoned astronaut?** Delete this file. Have fun!
+## Features
 
-## 🚀 Project Structure
+- **_Fetches Real-time Data:_** Connects to the official CPSC Recalls API to display the latest product recalls.
 
-Inside of your Astro project, you'll see the following folders and files:
+- **_Searchable List:_** Provides a search bar to quickly find recalls by keywords in their title or description.
 
-```text
-/
-├── public/
-│   └── favicon.svg
-├── src
-│   ├── assets
-│   │   └── astro.svg
-│   ├── components
-│   │   └── Welcome.astro
-│   ├── layouts
-│   │   └── Layout.astro
-│   └── pages
-│       └── index.astro
-└── package.json
-```
+- **_Responsive Design:_** Built with modern web standards to ensure a good experience across various devices.
 
-To learn more about the folder structure of an Astro project, refer to [our guide on project structure](https://docs.astro.build/en/basics/project-structure/).
+- **_Fast & Efficient:_** Leverages Astro's partial hydration for optimal performance.
 
-## 🧞 Commands
+## Technologies Used
 
-All commands are run from the root of the project, from a terminal:
+- **_Astro_**: A modern static site builder for building content-focused websites.
 
-| Command                   | Action                                           |
-| :------------------------ | :----------------------------------------------- |
-| `npm install`             | Installs dependencies                            |
-| `npm run dev`             | Starts local dev server at `localhost:4321`      |
-| `npm run build`           | Build your production site to `./dist/`          |
-| `npm run preview`         | Preview your build locally, before deploying     |
-| `npm run astro ...`       | Run CLI commands like `astro add`, `astro check` |
-| `npm run astro -- --help` | Get help using the Astro CLI                     |
+- **_JavaScript:_** For fetching data from the API and implementing the search functionality.
 
-## 👀 Want to learn more?
-
-Feel free to check [our documentation](https://docs.astro.build) or jump into our [Discord server](https://astro.build/chat).
+- **_CPSC Recalls API:_** The official API from cpsc.gov for recall data.
