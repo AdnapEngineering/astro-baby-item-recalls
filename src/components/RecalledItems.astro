@@ -1,28 +1,55 @@
 ---
-// @TODO: Get data from api https://www.cpsc.gov/Recalls/CPSC-Recalls-Application-Program-Interface-API-Information
-const recalledItems = [
-  {
-    id: 'crib-001',
-    name: 'SleepyTime Drop-Side Crib',
-    reason: 'Detachment hazard with the drop-side rail.',
-    recallDate: '2025-06-15',
-    link: 'https://www.cpsc.gov/Recalls'
-  },
-  {
-    id: 'chair-002',
-    name: 'Happy Eater High Chair',
-    reason: 'Restraint straps can loosen, posing a fall risk.',
-    recallDate: '2025-05-20',
-    link: 'https://www.cpsc.gov/Recalls'
-  },
-  {
-    id: 'monitor-003',
-    name: 'Watchful-Eye Baby Monitor',
-    reason: 'Overheating issue with the power adapter.',
-    recallDate: '2025-07-02',
-    link: 'https://www.cpsc.gov/Recalls'
+const today = new Date();
+const sevenDaysAgo = new Date(today);
+sevenDaysAgo.setDate(today.getDate() - 7);
+
+const formatDate = (date: Date) => date.toISOString().split("T")[0];
+
+const startDate = formatDate(sevenDaysAgo);
+const endDate = formatDate(today);
+
+const API_URL = `https://www.saferproducts.gov/RestWebServices/Recall?format=json&field_rc_date_value=${startDate}&field_rc_date_value_1=${endDate}&field_rc_recall_by_product_target_id=119`;
+
+interface RecallProduct {
+  Name?: string;
+}
+
+interface RecallItem {
+  RecallID: string;
+  Title: string;
+  RecallDate: string;
+  URL?: string;
+  Products?: RecallProduct[];
+}
+
+interface RecallCardItem {
+  id: string;
+  name: string;
+  reason: string;
+  recallDate: string;
+  link: string;
+}
+
+let recalledItems: RecallCardItem[] = [];
+
+try {
+  const res = await fetch(API_URL);
+  if (res.ok) {
+    const data: RecallItem[] = await res.json();
+
+    recalledItems = data.slice(0, 10).map((item): RecallCardItem => ({
+      id: item.RecallID,
+      name: item.Products?.[0]?.Name || "Unknown",
+      reason: item.Title|| "No details provided",
+      recallDate: item.RecallDate,
+      link: item.URL || "https://www.cpsc.gov/Recalls",
+    }));
+  } else {
+    console.error("API error:", res.statusText);
   }
-];
+} catch (err) {
+  console.error("Fetch failed:", err);
+}
 ---
 
 <div class="max-w-3xl mx-auto p-4 bg-primary/10 border border-primary rounded-lg">
@@ -38,7 +65,7 @@ const recalledItems = [
       <div class="card border-l-4 border-primary bg-base-100 shadow-md" id={item.id}>
         <div class="card-body">
           <h3 class="card-title">{item.name}</h3>
-          <p><span class="font-semibold">Reason for Recall:</span> {item.reason}</p>
+          <p><span class="font-semibold">Recall Title:</span> {item.reason}</p>
           <p><span class="font-semibold">Recall Date:</span> {new Date(item.recallDate).toLocaleDateString()}</p>
           <div class="card-actions justify-end">
             <a
