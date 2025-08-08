@@ -25,80 +25,33 @@ const recalledItems = [
 ];
 ---
 
-<div class="recall-container">
-  <h2>Recent Baby Product Recalls</h2>
-  <p>Please check your items against this list for your child's safety.</p>
-  <div class="recall-list">
+<div class="max-w-3xl mx-auto p-4 bg-primary/10 border border-primary rounded-lg">
+  <h2 class="text-xl font-bold text-primary border-b border-primary/30 pb-2 mb-4">
+    Recent Baby Product Recalls
+  </h2>
+  <p class="mb-6 text-base-content/80">
+    Please check your items against this list for your child's safety.
+  </p>
+
+  <div class="grid gap-4">
     {recalledItems.map(item => (
-      <article class="recall-card" id={item.id}>
-        <h3>{item.name}</h3>
-        <p><strong>Reason for Recall:</strong> {item.reason}</p>
-        <p><strong>Recall Date:</strong> {new Date(item.recallDate).toLocaleDateString()}</p>
-        <a href={item.link} target="_blank" rel="noopener noreferrer" class="recall-link">
-          Official Notice &rarr;
-        </a>
-      </article>
+      <div class="card border-l-4 border-primary bg-base-100 shadow-md" id={item.id}>
+        <div class="card-body">
+          <h3 class="card-title">{item.name}</h3>
+          <p><span class="font-semibold">Reason for Recall:</span> {item.reason}</p>
+          <p><span class="font-semibold">Recall Date:</span> {new Date(item.recallDate).toLocaleDateString()}</p>
+          <div class="card-actions justify-end">
+            <a
+              href={item.link}
+              target="_blank"
+              rel="noopener noreferrer"
+              class="btn btn-sm btn-primary text-primary-content"
+            >
+              Official Notice →
+            </a>
+          </div>
+        </div>
+      </div>
     ))}
   </div>
 </div>
-
-<style>
-  .recall-container {
-    background-color: #fff8f8; /* A light pink/red background */
-    border: 2px solid #e11d48; /* A strong red border */
-    border-radius: 8px;
-    padding: 1.5rem;
-    font-family: system-ui, sans-serif;
-    max-width: 700px;
-    margin: 2rem auto; /* Center the component */
-  }
-
-  .recall-container h2 {
-    color: #be123c;
-    margin-top: 0;
-    border-bottom: 2px solid #fecaca;
-    padding-bottom: 0.5rem;
-  }
-  
-  .recall-list {
-    display: grid;
-    gap: 1rem;
-  }
-
-  .recall-card {
-    background-color: #ffffff;
-    border: 1px solid #ddd;
-    border-left: 5px solid #e11d48; /* Accent border */
-    padding: 1rem;
-    border-radius: 4px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-  }
-
-  .recall-card h3 {
-    margin-top: 0;
-    margin-bottom: 0.5rem;
-    color: #1f2937;
-  }
-
-
-
-  .recall-card p {
-    margin: 0.25rem 0;
-    color: #4b5563;
-    line-height: 1.5;
-  }
-  
-  .recall-link {
-    display: inline-block;
-    margin-top: 0.75rem;
-    font-weight: bold;
-    color: #be123c;
-    text-decoration: none;
-    transition: transform 0.2s ease-in-out;
-  }
-
-  .recall-link:hover {
-    text-decoration: underline;
-    transform: translateX(4px);
-  }
-</style>
