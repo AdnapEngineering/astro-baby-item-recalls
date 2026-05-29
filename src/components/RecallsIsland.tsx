@@ -1,37 +1,6 @@
-import { useEffect, useState } from 'react';
-
-type RecallProduct = { Name?: string };
-type Organization = { Name: string };
-type RecallItem = {
-  RecallID: string;
-  Title: string;
-  RecallDate: string;
-  URL?: string;
-  ConsumerContact?: string;
-  Products?: RecallProduct[];
-  Retailers?: Organization[];
-};
-
-type RecallCardItem = {
-  id: string;
-  name: string;
-  reason: string;
-  recallDate: string;
-  link: string;
-  consumerContact?: string;
-  retailers: string[];
-};
-
-function isoDate(date: Date) {
-  return date.toISOString().split('T')[0];
-}
-
-function buildApiUrl(days: number) {
-  const today = new Date();
-  const start = new Date(today);
-  start.setDate(today.getDate() - days);
-  return `https://www.saferproducts.gov/RestWebServices/Recall?format=json&field_rc_date_value=${isoDate(start)}&field_rc_date_value_1=${isoDate(today)}&field_rc_recall_by_product_target_id=119`;
-}
+import { useEffect, useRef, useState } from 'react';
+import { buildApiUrl, mapRecalls } from '../lib/recalls';
+import type { RecallCardItem, RecallItem } from '../lib/recalls';
 
 function formatDate(raw: string) {
   const d = new Date(raw);
@@ -50,11 +19,21 @@ function SkeletonCard() {
   );
 }
 
-export default function RecallsIsland({ days = 7 }: { days?: number }) {
-  const [items, setItems] = useState<RecallCardItem[] | null>(null);
+interface Props {
+  days?: number;
+  initialData?: RecallCardItem[];
+}
+
+export default function RecallsIsland({ days = 7, initialData }: Props) {
+  // Seed state with server-rendered data if available — no skeleton on first paint
+  const [items, setItems] = useState<RecallCardItem[] | null>(initialData ?? null);
   const [error, setError] = useState<string | null>(null);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(!initialData);
+
+  // Track whether this is the first render so we can skip the auto-fetch
+  // when the server already provided data
+  const isFirstRender = useRef(true);
 
   async function load() {
     setLoading(true);
@@ -63,18 +42,7 @@ export default function RecallsIsland({ days = 7 }: { days?: number }) {
       const res = await fetch(buildApiUrl(days), { cache: 'no-store' });
       if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
       const data: RecallItem[] = await res.json();
-
-      setItems(
-        data.slice(0, 10).map(item => ({
-          id: item.RecallID,
-          name: item.Title,
-          reason: item.Products?.[0]?.Name ?? 'No details provided',
-          recallDate: item.RecallDate,
-          link: item.URL ?? 'https://www.cpsc.gov/Recalls',
-          consumerContact: item.ConsumerContact,
-          retailers: item.Retailers?.map(r => r.Name) ?? [],
-        }))
-      );
+      setItems(mapRecalls(data));
       setLastUpdated(new Date());
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : 'Failed to fetch recalls.');
@@ -84,6 +52,11 @@ export default function RecallsIsland({ days = 7 }: { days?: number }) {
   }
 
   useEffect(() => {
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      // Skip auto-fetch on mount if the server already gave us data
+      if (initialData !== undefined) return;
+    }
     load();
   }, [days]);
 
@@ -116,9 +89,7 @@ export default function RecallsIsland({ days = 7 }: { days?: number }) {
       )}
 
       {lastUpdated && (
-        <p className="text-xs opacity-60 mb-3">
-          Last updated: {lastUpdated.toLocaleString()}
-        </p>
+        <p className="text-xs opacity-60 mb-3">Last updated: {lastUpdated.toLocaleString()}</p>
       )}
 
       <div className="grid gap-4">
@@ -133,10 +104,7 @@ export default function RecallsIsland({ days = 7 }: { days?: number }) {
         )}
 
         {items?.map(item => (
-          <div
-            key={item.id}
-            className="card border-l-4 border-primary bg-base-100 shadow-md"
-          >
+          <div key={item.id} className="card border-l-4 border-primary bg-base-100 shadow-md">
             <div className="card-body">
               <h3 className="card-title">{item.name}</h3>
 
