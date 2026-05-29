@@ -1,6 +1,13 @@
 ---
-import RecallsIsland from "../components/RecallsIsland.tsx";
+import RecallsIsland from './RecallsIsland.tsx';
+import { fetchRecalls } from '../lib/recalls';
+
+let initialData;
+try {
+  initialData = await fetchRecalls(7);
+} catch {
+  // API unavailable at build time — island will fetch client-side on load
+}
 ---
 
-<!-- Hydrate only when the component scrolls into view -->
-<RecallsIsland days={7} client:visible />
+<RecallsIsland days={7} initialData={initialData} client:load />
