@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { buildApiUrl, mapRecalls } from '../lib/recalls';
+import { buildApiUrl, DEFAULT_DAYS, mapRecalls } from '../lib/recalls';
 import type { RecallCardItem, RecallItem } from '../lib/recalls';
 
 function formatDate(raw: string) {
@@ -24,7 +24,7 @@ interface Props {
   initialData?: RecallCardItem[];
 }
 
-export default function RecallsIsland({ days = 7, initialData }: Props) {
+export default function RecallsIsland({ days = DEFAULT_DAYS, initialData }: Props) {
   // Seed state with server-rendered data if available — no skeleton on first paint
   const [items, setItems] = useState<RecallCardItem[] | null>(initialData ?? null);
   const [error, setError] = useState<string | null>(null);
