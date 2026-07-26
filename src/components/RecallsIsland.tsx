@@ -92,7 +92,22 @@ export default function RecallsIsland({ days = DEFAULT_DAYS, initialData }: Prop
         <p className="text-xs opacity-60 mb-3">Last updated: {lastUpdated.toLocaleString()}</p>
       )}
 
-      <div className="grid gap-4">
+      {!loading && !!items?.length && (
+        <p className="mb-3 text-xs opacity-60">
+          Showing {items.length} {items.length === 1 ? 'recall' : 'recalls'} from the last {days}{' '}
+          days — scroll for more.
+        </p>
+      )}
+
+      {/* Roughly three cards tall, then scrolls. Card heights vary with title length,
+          so this is a nominal three rather than an exact one. tabIndex makes the
+          scroll region reachable by keyboard. */}
+      <div
+        className="grid max-h-[38rem] gap-4 overflow-y-auto overscroll-contain pr-2"
+        role="region"
+        aria-label="Recent recalls, scrollable list"
+        tabIndex={0}
+      >
         {loading && Array.from({ length: 3 }, (_, i) => <SkeletonCard key={i} />)}
 
         {!loading && items?.length === 0 && (
