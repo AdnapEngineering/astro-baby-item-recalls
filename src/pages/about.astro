@@ -1,0 +1,57 @@
+---
+import Layout from '../layouts/Layout.astro';
+---
+
+<Layout
+  title="About — Baby Safety Site"
+  description="What this site does, where its recall data comes from, and how often it updates."
+>
+  <main class="mx-auto max-w-3xl p-4">
+    <h1 class="mb-2 text-2xl font-bold">About this site</h1>
+    <p class="mb-8 text-base-content/80">
+      A small, fast page for checking whether baby and child products have been recalled.
+    </p>
+
+    <section class="mb-8">
+      <h2 class="mb-2 text-xl font-semibold">What it does</h2>
+      <p>
+        The home page lists recent recalls of children's products, newest first. Each card links to
+        the official recall notice, and expands to show consumer contact details and the retailers
+        that sold the item.
+      </p>
+    </section>
+
+    <section class="mb-8">
+      <h2 class="mb-2 text-xl font-semibold">Where the data comes from</h2>
+      <p class="mb-3">
+        Every recall shown here comes from the <a
+          href="https://www.saferproducts.gov/RestWebServices/Recall"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="link link-primary">U.S. Consumer Product Safety Commission</a
+        > public recalls API, filtered to the children's product category.
+      </p>
+      <p>
+        Nothing is written or edited by hand — this site only reformats what the CPSC publishes. It
+        is not affiliated with or endorsed by the CPSC. For anything official, follow the link on a
+        recall card through to <span class="font-medium">cpsc.gov</span>.
+      </p>
+    </section>
+
+    <section class="mb-8">
+      <h2 class="mb-2 text-xl font-semibold">How current it is</h2>
+      <p>
+        Recalls are fetched when the site is built and published, so the list reflects the most
+        recent deploy. The <span class="font-medium">↻ Refresh</span> button on the home page pulls live
+        results straight from the CPSC if you want to be certain you are seeing the newest data.
+      </p>
+    </section>
+
+    <div class="alert alert-warning">
+      <span>
+        This site is an informational convenience, not a safety guarantee. An item not appearing
+        here does not mean it has not been recalled.
+      </span>
+    </div>
+  </main>
+</Layout>
