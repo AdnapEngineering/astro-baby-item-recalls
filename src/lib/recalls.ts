@@ -25,7 +25,10 @@ export type RecallCardItem = {
 };
 
 /** Default look-back window, in days, for the recalls list. */
-export const DEFAULT_DAYS = 10;
+export const DEFAULT_DAYS = 20;
+
+/** Maximum number of recalls rendered, after child-product filtering. */
+export const MAX_RECALLS = 20;
 
 function isoDate(date: Date) {
   return date.toISOString().split('T')[0];
@@ -67,7 +70,7 @@ export function isChildProduct(item: RecallItem) {
 export function mapRecalls(data: RecallItem[]): RecallCardItem[] {
   return data
     .filter(isChildProduct)
-    .slice(0, 20)
+    .slice(0, MAX_RECALLS)
     .map(item => ({
       id: item.RecallID,
       name: item.Title,
