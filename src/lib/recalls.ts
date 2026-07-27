@@ -1,18 +1,53 @@
-export type RecallProduct = { Name?: string };
-export type Organization = { Name: string };
-export type Hazard = { Name?: string };
+import { z } from 'zod';
 
-export type RecallItem = {
-  RecallID: number;
-  Title: string;
-  Description?: string;
-  RecallDate: string;
-  URL?: string;
-  ConsumerContact?: string;
-  Products?: RecallProduct[];
-  Retailers?: Organization[];
-  Hazards?: Hazard[];
-};
+// The CPSC response is external input, so the schema — not a hand-written type — is the
+// source of truth. Unknown keys are stripped rather than rejected (no `.strict()`): the
+// API returns many fields this site ignores, and new ones should not break the build.
+const RecallProductSchema = z.object({ Name: z.string().optional() });
+const OrganizationSchema = z.object({ Name: z.string() });
+const HazardSchema = z.object({ Name: z.string().optional() });
+
+export const RecallItemSchema = z.object({
+  RecallID: z.number(),
+  Title: z.string(),
+  Description: z.string().optional(),
+  RecallDate: z.string(),
+  URL: z.string().optional(),
+  ConsumerContact: z.string().optional(),
+  Products: z.array(RecallProductSchema).optional(),
+  Retailers: z.array(OrganizationSchema).optional(),
+  Hazards: z.array(HazardSchema).optional(),
+});
+
+export const RecallResponseSchema = z.array(RecallItemSchema);
+
+export type RecallItem = z.infer<typeof RecallItemSchema>;
+
+/**
+ * Thrown when the API responds successfully but with an unexpected shape. Distinct from a
+ * network error so callers can treat "CPSC is down" (tolerable) differently from "CPSC
+ * changed its contract" (a defect that should fail the build).
+ */
+export class RecallSchemaError extends Error {
+  constructor(issues: z.core.$ZodIssue[]) {
+    // A single renamed field yields one issue per record, so cap the detail — otherwise
+    // the real message scrolls out of the build log.
+    const detail = issues
+      .slice(0, 5)
+      .map(i => `  ${i.path.join('.') || '(root)'}: ${i.message}`)
+      .join('\n');
+    const more = issues.length > 5 ? `\n  …and ${issues.length - 5} more` : '';
+    super(`CPSC recall API response did not match the expected schema:\n${detail}${more}`);
+    this.name = 'RecallSchemaError';
+  }
+}
+
+/** Validates a raw CPSC response. Throws {@link RecallSchemaError} on mismatch. */
+export function parseRecallResponse(json: unknown): RecallItem[] {
+  const result = RecallResponseSchema.safeParse(json);
+  if (!result.success) throw new RecallSchemaError(result.error.issues);
+  return result.data;
+}
 
 export type RecallCardItem = {
   id: number;
@@ -85,6 +120,5 @@ export function mapRecalls(data: RecallItem[]): RecallCardItem[] {
 export async function fetchRecalls(days: number): Promise<RecallCardItem[]> {
   const res = await fetch(buildApiUrl(days));
   if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
-  const data: RecallItem[] = await res.json();
-  return mapRecalls(data);
+  return mapRecalls(parseRecallResponse(await res.json()));
 }

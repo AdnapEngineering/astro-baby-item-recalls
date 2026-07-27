@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import { buildApiUrl, DEFAULT_DAYS, mapRecalls } from '../lib/recalls';
-import type { RecallCardItem, RecallItem } from '../lib/recalls';
+import { buildApiUrl, DEFAULT_DAYS, mapRecalls, parseRecallResponse } from '../lib/recalls';
+import type { RecallCardItem } from '../lib/recalls';
 
 function formatDate(raw: string) {
   const d = new Date(raw);
@@ -41,10 +41,12 @@ export default function RecallsIsland({ days = DEFAULT_DAYS, initialData }: Prop
     try {
       const res = await fetch(buildApiUrl(days), { cache: 'no-store' });
       if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
-      const data: RecallItem[] = await res.json();
-      setItems(mapRecalls(data));
+      setItems(mapRecalls(parseRecallResponse(await res.json())));
       setLastUpdated(new Date());
     } catch (e: unknown) {
+      // Unlike the build, the browser stays lenient: any already-rendered recalls remain
+      // on screen and the user gets an error alert with Retry rather than a blank page.
+      console.error('[recalls]', e);
       setError(e instanceof Error ? e.message : 'Failed to fetch recalls.');
     } finally {
       setLoading(false);

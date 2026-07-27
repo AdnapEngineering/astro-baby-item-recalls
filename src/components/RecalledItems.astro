@@ -1,12 +1,15 @@
 ---
 import RecallsIsland from './RecallsIsland.tsx';
-import { DEFAULT_DAYS, fetchRecalls } from '../lib/recalls';
+import { DEFAULT_DAYS, fetchRecalls, RecallSchemaError } from '../lib/recalls';
 
 let initialData;
 try {
   initialData = await fetchRecalls(DEFAULT_DAYS);
-} catch {
-  // API unavailable at build time — island will fetch client-side on load
+} catch (err) {
+  // A shape change is a real defect — fail the build rather than ship blank cards.
+  if (err instanceof RecallSchemaError) throw err;
+  // API merely unavailable at build time — island will fetch client-side on load.
+  console.warn('[recalls] build-time fetch failed, falling back to client fetch:', err);
 }
 ---
 
