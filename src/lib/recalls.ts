@@ -3,20 +3,35 @@ import { z } from 'zod';
 // The CPSC response is external input, so the schema — not a hand-written type — is the
 // source of truth. Unknown keys are stripped rather than rejected (no `.strict()`): the
 // API returns many fields this site ignores, and new ones should not break the build.
-const RecallProductSchema = z.object({ Name: z.string().optional() });
+const RecallProductSchema = z.object({
+  Name: z.string().optional(),
+  NumberOfUnits: z.string().optional(),
+});
 const OrganizationSchema = z.object({ Name: z.string() });
 const HazardSchema = z.object({ Name: z.string().optional() });
+const ImageSchema = z.object({ URL: z.string(), Caption: z.string().optional() });
+const RemedySchema = z.object({ Name: z.string().optional() });
+const RemedyOptionSchema = z.object({ Option: z.string() });
+const InjurySchema = z.object({ Name: z.string().optional() });
+const CountrySchema = z.object({ Country: z.string() });
 
 export const RecallItemSchema = z.object({
   RecallID: z.number(),
+  RecallNumber: z.string().optional(),
   Title: z.string(),
   Description: z.string().optional(),
   RecallDate: z.string(),
+  LastPublishDate: z.string().optional(),
   URL: z.string().optional(),
   ConsumerContact: z.string().optional(),
   Products: z.array(RecallProductSchema).optional(),
   Retailers: z.array(OrganizationSchema).optional(),
   Hazards: z.array(HazardSchema).optional(),
+  Images: z.array(ImageSchema).optional(),
+  Remedies: z.array(RemedySchema).optional(),
+  RemedyOptions: z.array(RemedyOptionSchema).optional(),
+  Injuries: z.array(InjurySchema).optional(),
+  ManufacturerCountries: z.array(CountrySchema).optional(),
 });
 
 export const RecallResponseSchema = z.array(RecallItemSchema);
@@ -89,6 +104,27 @@ export function buildApiUrl(days: number) {
 // mentions child-resistance, such as lighters.
 const CHILD_KEYWORDS =
   /baby|infant|toddler|child|crib|stroller|teether|teething|nursery|bassinet|playpen|play yard|high ?chair|booster|car seat|pacifier|diaper|swaddle|bouncer|youth|kids?\b/i;
+
+// CPSC's own Hazards[].HazardType and .HazardTypeID come back empty on every record — same
+// as Products[].CategoryID above — so the category has to be derived from the hazard prose.
+// First match wins, so order matters: 'battery' precedes 'choking' because button-cell
+// recalls describe ingestion, and 'tip-over' precedes 'fall' because dresser recalls
+// mention both.
+const HAZARD_TAGS: [string, RegExp][] = [
+  ['battery', /button cell|coin batter|Reese's Law/i],
+  ['suffocation', /suffocation|obstruct.*breathing|infant support/i],
+  ['tip-over', /tip.?over|unstable|STURDY/i],
+  ['entrapment', /entrapment/i],
+  ['choking', /choking|small parts?\b/i],
+  ['fall', /fall hazard|collapse/i],
+  ['fire', /fire|burn|overheat|shock/i],
+  ['drowning', /drowning|submersion/i],
+];
+
+/** Derives a short, filterable category from CPSC's hazard paragraph. Null when unmatched. */
+export function hazardTag(name: string): string | null {
+  return HAZARD_TAGS.find(([, re]) => re.test(name))?.[0] ?? null;
+}
 
 export function isChildProduct(item: RecallItem) {
   const haystack = [
