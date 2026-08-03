@@ -13,7 +13,7 @@ export const recalls = sqliteTable('recalls', {
 export const hazards = sqliteTable(
   'hazards',
   {
-    id: integer('recall_id')
+    recallId: integer('recall_id')
       .notNull()
       .references(() => recalls.recallId),
     name: text('name').notNull(),

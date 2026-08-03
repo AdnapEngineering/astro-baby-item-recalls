@@ -12,7 +12,8 @@
     "astro": "astro",
     "format": "prettier . --write",
     "format:check": "prettier . --check",
-    "prepare": "git config core.hooksPath .githooks"
+    "prepare": "git config core.hooksPath .githooks",
+    "ingest": "tsx scripts/ingest.ts"
   },
   "dependencies": {
     "@astrojs/react": "^6.0.1",
