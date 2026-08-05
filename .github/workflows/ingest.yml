@@ -2,8 +2,16 @@ name: Ingest recalls
 
 on:
   schedule:
-    - cron: '0 12 * * *' # daily, 12:00 UTC
-  workflow_dispatch: {}
+    - cron: '0 12 * * 5' # weekly, Friday 12:00 UTC
+  # Manual runs can widen the window — use this once to backfill history, then let the
+  # schedule keep it current. Backfilling twice is harmless but pointless: rows upsert
+  # on recallId, so a re-run just rewrites what is already there.
+  workflow_dispatch:
+    inputs:
+      days:
+        description: 'How many days back to ingest'
+        required: false
+        default: '200'
 
 permissions:
   contents: read
@@ -31,3 +39,5 @@ jobs:
         env:
           DATABASE_URL: ${{ secrets.TURSO_DATABASE_URL }}
           DATABASE_AUTH_TOKEN: ${{ secrets.TURSO_AUTH_TOKEN }}
+          # Empty on scheduled runs, where the script's own 30-day default applies.
+          INGEST_DAYS: ${{ inputs.days }}

@@ -4,7 +4,16 @@ import { db } from '../src/db/client';
 import { recalls, hazards, remedyOptions } from '../src/db/schema';
 import { buildApiUrl, hazardTag, isChildProduct, parseRecallResponse } from '../src/lib/recalls';
 
-const DAYS = 100;
+// How far back to ask the CPSC API for. The default covers the weekly schedule with a
+// wide margin for late-published recalls; a one-off backfill overrides it with
+// INGEST_DAYS. Re-running a wider window is safe — rows upsert on recallId.
+// Scheduled Actions runs set this to the empty string rather than leaving it unset, so
+// test for truthiness instead of nullishness.
+const daysInput = process.env.INGEST_DAYS?.trim();
+const DAYS = daysInput ? Number(daysInput) : 30;
+if (!Number.isFinite(DAYS) || DAYS <= 0) {
+  throw new Error(`INGEST_DAYS must be a positive number, got "${daysInput}"`);
+}
 
 async function main() {
   const res = await fetch(buildApiUrl(DAYS));
