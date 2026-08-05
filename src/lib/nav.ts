@@ -18,5 +18,6 @@ export type NavLink = { href: string; label: string };
 
 export const navLinks: NavLink[] = [
   { href: withBase('/'), label: 'Home' },
+  { href: withBase('/hazards/'), label: 'Hazards' },
   { href: withBase('/about/'), label: 'About' },
 ];

@@ -1,0 +1,50 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import { formatRecallDate, getHazardGroups, type HazardGroup } from '../../lib/hazards';
+import { withBase } from '../../lib/nav';
+
+// Data → routes: the query runs once at build time and each group it returns becomes one
+// static page. The group rides along as a prop so the page needs no second query.
+export async function getStaticPaths() {
+  const groups = await getHazardGroups();
+  return groups.map(group => ({ params: { hazard: group.slug }, props: { group } }));
+}
+
+const { group } = Astro.props as { group: HazardGroup };
+const count = group.recalls.length;
+---
+
+<Layout
+  title={`${group.name} — Baby Safety Site`}
+  description={`Children's product recalls that pose a ${group.name.toLowerCase()} hazard.`}
+>
+  <main class="mx-auto max-w-3xl p-4">
+    <a href={withBase('/hazards/')} class="link link-primary mb-4 inline-block text-sm">
+      ← All hazards
+    </a>
+    <h1 class="mb-2 text-2xl font-bold">{group.name}</h1>
+    <p class="mb-6 text-base-content/80">
+      {count} recall{count === 1 ? '' : 's'} with this hazard, newest first.
+    </p>
+
+    <ul class="space-y-3">
+      {
+        group.recalls.map(recall => (
+          <li class="card gap-1 bg-base-200 p-4">
+            <a
+              href={recall.url ?? 'https://www.cpsc.gov/Recalls'}
+              target="_blank"
+              rel="noopener noreferrer"
+              class="link link-primary font-medium"
+            >
+              {recall.title}
+            </a>
+            <time datetime={recall.recallDate} class="text-sm text-base-content/60">
+              {formatRecallDate(recall.recallDate)}
+            </time>
+          </li>
+        ))
+      }
+    </ul>
+  </main>
+</Layout>
