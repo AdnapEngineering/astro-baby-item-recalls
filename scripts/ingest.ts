@@ -4,7 +4,7 @@ import { db } from '../src/db/client';
 import { recalls, hazards, remedyOptions } from '../src/db/schema';
 import { buildApiUrl, hazardTag, isChildProduct, parseRecallResponse } from '../src/lib/recalls';
 
-const DAYS = 10;
+const DAYS = 100;
 
 async function main() {
   const res = await fetch(buildApiUrl(DAYS));

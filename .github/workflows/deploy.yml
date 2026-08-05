@@ -4,21 +4,34 @@ on:
   push:
     branches: [main]
   workflow_dispatch:
+  # The build reads Turso, so fresh data needs a rebuild to reach the site.
+  workflow_run:
+    workflows: ['Ingest recalls']
+    types: [completed]
 
 permissions:
   contents: read
   pages: write
   id-token: write
 
+# A push landing mid-deploy should wait, not race. In-progress deploys are allowed to
+# finish rather than being cancelled, so the live site is never left half-published.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
 jobs:
   build:
     runs-on: ubuntu-latest
+    # workflow_run fires on completion regardless of outcome — skip rebuilds after a
+    # failed ingest, which would otherwise republish against a half-written database.
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
     steps:
       - name: Checkout your repository using git
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version: 24
           cache: 'npm'
@@ -28,9 +41,14 @@ jobs:
 
       - name: Build with Astro
         run: npm run build
+        # getStaticPaths queries Turso at build time; without these the client falls back
+        # to a local SQLite file that does not exist on the runner and the build fails.
+        env:
+          DATABASE_URL: ${{ secrets.TURSO_DATABASE_URL }}
+          DATABASE_AUTH_TOKEN: ${{ secrets.TURSO_AUTH_TOKEN }}
 
       - name: Upload artifact
-        uses: actions/upload-pages-artifact@v3
+        uses: actions/upload-pages-artifact@v5
         with:
           path: ./dist
 
@@ -41,10 +59,9 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
-      # NEW: Create the GitHub Pages deployment
       - name: Setup GitHub Pages
-        uses: actions/configure-pages@v4
+        uses: actions/configure-pages@v6
 
       - name: Deploy to GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@v5
