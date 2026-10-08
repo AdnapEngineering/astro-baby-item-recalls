@@ -1,14 +1,96 @@
 ---
-import RecalledItems from '../components/RecalledItems.astro';
+import RecallListItem from '../components/RecallListItem.tsx';
 import Layout from '../layouts/Layout.astro';
+import { formatRecallDate } from '../lib/format';
+import { withBase } from '../lib/nav';
+import { getRecallDetails } from '../lib/recall-data';
+import { toRecallSummary } from '../lib/recall-details';
+
+/** How many of the newest recalls the home page shows before pointing to search. */
+const LATEST_COUNT = 10;
+
+// Build-time query, like every other page: the home page used to fetch CPSC live, which
+// showed only the last few weeks and listed recalls with no detail page behind them.
+const details = await getRecallDetails();
+const latest = details.slice(0, LATEST_COUNT).map(toRecallSummary);
+// lastSeen is stamped by every ingest run that sees a recall, so the newest one is when
+// the data was last refreshed. ISO strings, so the string max is the latest time.
+const lastUpdated = details.reduce<string | null>(
+  (max, d) => (max === null || d.lastSeen > max ? d.lastSeen : max),
+  null
+);
 ---
 
-<Layout title="Baby Safety Site">
-  <main>
-    <div class="p-4 flex flex-col items-center gap-4">
-      <h1 class="text-2xl text-center">Welcome!</h1>
-      <p class="text-center">Keeping you informed about child safety.</p>
-    </div>
-    <RecalledItems />
+<Layout title="Baby Safety Site — check children's products for recalls">
+  <main class="mx-auto max-w-3xl p-4">
+    <section class="mb-10 rounded-box bg-primary/10 p-6">
+      <h1 class="mb-3 text-3xl font-bold">Has your child's gear been recalled?</h1>
+      <p class="mb-4">
+        This site collects U.S. Consumer Product Safety Commission recalls of baby and children's
+        products — cribs, strollers, car seats, sleepers, toys, and more — in one searchable place.
+      </p>
+
+      <form action={withBase('/recalls/')} method="get" role="search" class="mb-4">
+        <label for="home-search" class="mb-1 block font-medium">
+          Search by product, brand, or store
+        </label>
+        <div class="join w-full">
+          <input
+            id="home-search"
+            name="q"
+            type="search"
+            class="input join-item w-full"
+            placeholder="e.g. crib, stroller, Walmart"
+          />
+          <button type="submit" class="btn btn-primary join-item">Search</button>
+        </div>
+      </form>
+
+      <h2 class="mb-2 text-lg font-semibold">How to check a product</h2>
+      <ol class="mb-4 list-inside list-decimal space-y-1">
+        <li>Search for the brand or product name, or browse recalls by hazard.</li>
+        <li>Open a recall and compare the photo, model numbers, and dates with your item.</li>
+        <li>
+          If it matches, stop using it and follow the remedy — the company's contact details are on
+          every recall page.
+        </li>
+      </ol>
+
+      {
+        lastUpdated && (
+          <p class="text-sm text-base-content/70">
+            Recall data last updated{' '}
+            <time datetime={lastUpdated}>{formatRecallDate(lastUpdated)}</time>.
+          </p>
+        )
+      }
+    </section>
+
+    <section>
+      <h2 class="mb-4 text-2xl font-bold">Latest recalls</h2>
+      {
+        latest.length === 0 ? (
+          <div class="alert alert-info">
+            <span>No recalls to show yet — the recall database has not been populated.</span>
+          </div>
+        ) : (
+          <>
+            <ul class="mb-4 space-y-3">
+              {latest.map(recall => (
+                <RecallListItem recall={recall} headingLevel={3} />
+              ))}
+            </ul>
+            <p class="flex flex-wrap gap-4">
+              <a href={withBase('/recalls/')} class="link link-primary">
+                Search all {details.length} recalls →
+              </a>
+              <a href={withBase('/hazards/')} class="link link-primary">
+                Browse recalls by hazard →
+              </a>
+            </p>
+          </>
+        )
+      }
+    </section>
   </main>
 </Layout>

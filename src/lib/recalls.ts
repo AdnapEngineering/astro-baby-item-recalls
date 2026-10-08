@@ -64,22 +64,6 @@ export function parseRecallResponse(json: unknown): RecallItem[] {
   return result.data;
 }
 
-export type RecallCardItem = {
-  id: number;
-  name: string;
-  reason: string;
-  recallDate: string;
-  link: string;
-  consumerContact?: string;
-  retailers: string[];
-};
-
-/** Default look-back window, in days, for the recalls list. */
-export const DEFAULT_DAYS = 20;
-
-/** Maximum number of recalls rendered, after child-product filtering. */
-export const MAX_RECALLS = 20;
-
 function isoDate(date: Date) {
   return date.toISOString().split('T')[0];
 }
@@ -110,20 +94,39 @@ const CHILD_KEYWORDS =
 // First match wins, so order matters: 'battery' precedes 'choking' because button-cell
 // recalls describe ingestion, and 'tip-over' precedes 'fall' because dresser recalls
 // mention both.
-const HAZARD_TAGS: [string, RegExp][] = [
-  ['battery', /button cell|coin batter|Reese's Law/i],
-  ['suffocation', /suffocation|obstruct.*breathing|infant support/i],
-  ['tip-over', /tip.?over|unstable|STURDY/i],
-  ['entrapment', /entrapment/i],
-  ['choking', /choking|small parts?\b/i],
-  ['fall', /fall hazard|collapse/i],
-  ['fire', /fire|burn|overheat|shock/i],
-  ['drowning', /drowning|submersion/i],
-];
+// The tag is stored in the DB and doubles as the hazard page's URL slug, so it must stay
+// lowercase and hyphenated. The label lives alongside it so a new tag cannot ship without
+// a heading.
+export const HAZARD_TAGS = [
+  {
+    tag: 'battery',
+    label: 'Button battery ingestion',
+    pattern: /button cell|coin batter|Reese's Law/i,
+  },
+  {
+    tag: 'suffocation',
+    label: 'Suffocation',
+    pattern: /suffocation|obstruct.*breathing|infant support/i,
+  },
+  { tag: 'tip-over', label: 'Tip-over', pattern: /tip.?over|unstable|STURDY/i },
+  { tag: 'entrapment', label: 'Entrapment', pattern: /entrapment/i },
+  { tag: 'choking', label: 'Choking', pattern: /choking|small parts?\b/i },
+  { tag: 'fall', label: 'Fall or collapse', pattern: /fall hazard|collapse/i },
+  { tag: 'fire', label: 'Fire, burn, or shock', pattern: /fire|burn|overheat|shock/i },
+  { tag: 'drowning', label: 'Drowning', pattern: /drowning|submersion/i },
+] as const satisfies readonly { tag: string; label: string; pattern: RegExp }[];
 
 /** Derives a short, filterable category from CPSC's hazard paragraph. Null when unmatched. */
 export function hazardTag(name: string): string | null {
-  return HAZARD_TAGS.find(([, re]) => re.test(name))?.[0] ?? null;
+  return HAZARD_TAGS.find(({ pattern }) => pattern.test(name))?.tag ?? null;
+}
+
+/**
+ * Human-readable heading for a stored tag. Rows tagged by an older ingest can carry a tag
+ * since removed from HAZARD_TAGS, so an unknown tag falls back to the raw slug.
+ */
+export function hazardLabel(tag: string): string {
+  return HAZARD_TAGS.find(h => h.tag === tag)?.label ?? tag;
 }
 
 export function isChildProduct(item: RecallItem) {
@@ -136,25 +139,4 @@ export function isChildProduct(item: RecallItem) {
     .filter(Boolean)
     .join(' ');
   return CHILD_KEYWORDS.test(haystack);
-}
-
-export function mapRecalls(data: RecallItem[]): RecallCardItem[] {
-  return data
-    .filter(isChildProduct)
-    .slice(0, MAX_RECALLS)
-    .map(item => ({
-      id: item.RecallID,
-      name: item.Title,
-      reason: item.Products?.[0]?.Name ?? 'No details provided',
-      recallDate: item.RecallDate,
-      link: item.URL ?? 'https://www.cpsc.gov/Recalls',
-      consumerContact: item.ConsumerContact,
-      retailers: item.Retailers?.map(r => r.Name) ?? [],
-    }));
-}
-
-export async function fetchRecalls(days: number): Promise<RecallCardItem[]> {
-  const res = await fetch(buildApiUrl(days));
-  if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
-  return mapRecalls(parseRecallResponse(await res.json()));
 }

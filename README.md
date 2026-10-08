@@ -16,8 +16,10 @@ The CPSC API has no usable product category field, so children's products are id
 
 ## Features
 
-- **_Searchable list:_** Find recalls by keywords in their title or description.
-- **_Hazard browsing:_** Recalls are tagged by hazard type with a page per hazard.
+- **_Searchable list:_** `/recalls/` lists every stored recall, newest first, with a keyword and hazard filter that runs in the browser over build-time data. Filters sync to `?q=` and `?hazard=`, so a search can be shared, and the home page's search box hands off to it.
+- **_Recall detail pages:_** `/recalls/<id>/` shows everything stored for a recall — photo, hazards, remedy and remedy options, injuries, units, where sold, contact info, and the official CPSC link.
+- **_Hazard browsing:_** Recalls are tagged by hazard type with a page per hazard, each row showing a thumbnail and the remedy.
+- **_Latest recalls:_** The home page shows the newest stored recalls and when the data was last updated.
 - **_Responsive design:_** Built with modern web standards for a good experience across devices.
 - **_Fast & efficient:_** Statically built, with Astro's partial hydration for the interactive pieces.
 
@@ -31,14 +33,18 @@ The CPSC API has no usable product category field, so children's products are id
 
 ## Project layout
 
-| Path                 | What lives there                                             |
-| -------------------- | ------------------------------------------------------------ |
-| `src/pages/`         | Routes — home, about, and hazard index/detail pages          |
-| `src/db/schema.ts`   | Drizzle schema: `recalls`, `hazards`, `remedy_options`       |
-| `src/db/client.ts`   | libSQL client; reads `DATABASE_URL` / `DATABASE_AUTH_TOKEN`  |
-| `src/lib/recalls.ts` | CPSC API parsing, child-product matching, hazard tagging     |
-| `scripts/ingest.ts`  | The ingest job — fetches CPSC recalls and upserts into Turso |
-| `drizzle.config.ts`  | Drizzle Kit config for generating/applying migrations        |
+| Path                        | What lives there                                                                 |
+| --------------------------- | -------------------------------------------------------------------------------- |
+| `src/pages/`                | Routes — home, about, recall search/detail, and hazard index/detail pages        |
+| `src/components/`           | Header/footer, the shared recall list row, and the search island                 |
+| `src/db/schema.ts`          | Drizzle schema: `recalls`, `hazards`, `remedy_options`                           |
+| `src/db/client.ts`          | libSQL client; reads `DATABASE_URL` / `DATABASE_AUTH_TOKEN`                      |
+| `src/lib/recalls.ts`        | CPSC API parsing, child-product matching, and the hazard tag/label/pattern table |
+| `src/lib/recall-data.ts`    | The build-time DB load every page shares (memoised per build)                    |
+| `src/lib/recall-details.ts` | Pure reshaping of DB rows into page data; `hazard-groups.ts` and `search.ts` too |
+| `scripts/ingest.ts`         | The ingest job — fetches CPSC recalls and upserts into Turso                     |
+| `scripts/upsert-recall.ts`  | One recall's writes, as a single atomic `db.batch`                               |
+| `drizzle.config.ts`         | Drizzle Kit config for generating/applying migrations                            |
 
 ## Local development
 
@@ -62,7 +68,11 @@ npm run dev      # dev server
 npm run build    # production build (queries the database at build time)
 npm run preview  # preview the built site
 npm run format   # prettier
+npm run check    # astro check — type-checks .astro, .ts, and .tsx
+npm test         # vitest unit tests; no database or network needed
 ```
+
+Tests sit next to the code they cover (`*.test.ts`). The DB-facing modules are kept thin so the logic worth testing lives in pure functions; the ingest upsert is the exception, and its test runs against a throwaway SQLite file in the OS temp directory, never `DATABASE_URL`.
 
 Populate the database:
 
@@ -71,7 +81,7 @@ npm run ingest              # last 30 days
 INGEST_DAYS=200 npm run ingest   # wider window, e.g. an initial backfill
 ```
 
-The ingest upserts on the CPSC `recallId`, so re-running it — at any window size — refreshes existing rows rather than duplicating them. A backfill is a one-time operation; there is no reason to run a wide window twice.
+The ingest upserts on the CPSC `recallId`, so re-running it — at any window size — refreshes existing rows rather than duplicating them. A backfill is a one-time operation; there is no reason to run a wide window twice. Each recall's row and its hazard/remedy rows are written in one transaction, so a run that fails midway leaves every recall either fully updated or untouched. The log line reports how many recalls were new versus updated.
 
 ## Deployment
 
@@ -88,7 +98,7 @@ Manual runs take a `days` input (default `200`) that becomes `INGEST_DAYS`. Sche
 
 ### `Deploy Astro site to GitHub Pages` — [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml)
 
-Builds and publishes. Triggered by pushes to `main`, manual dispatch, and — via `workflow_run` — the completion of `Ingest recalls`. That last trigger is what gets fresh data onto the site: the build reads Turso, so ingested rows are invisible until a rebuild.
+Type-checks, runs the unit tests, then builds and publishes. Triggered by pushes to `main`, manual dispatch, and — via `workflow_run` — the completion of `Ingest recalls`. That last trigger is what gets fresh data onto the site: the build reads Turso, so ingested rows are invisible until a rebuild.
 
 A few things about this workflow that are easy to trip over:
 

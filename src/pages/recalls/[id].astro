@@ -1,0 +1,141 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import { formatRecallDate } from '../../lib/format';
+import { withBase } from '../../lib/nav';
+import { getRecallDetails } from '../../lib/recall-data';
+import type { RecallDetail } from '../../lib/recall-details';
+
+// One static page per stored recall, so a parent can read everything the CPSC published
+// about it without leaving the site — and without the deployed page touching the DB.
+export async function getStaticPaths() {
+  const details = await getRecallDetails();
+  return details.map(recall => ({ params: { id: String(recall.recallId) }, props: { recall } }));
+}
+
+const { recall } = Astro.props as { recall: RecallDetail };
+const officialUrl = recall.url ?? 'https://www.cpsc.gov/Recalls';
+
+// Only the facts CPSC actually supplied; an empty row reads like "unknown" when it
+// usually means "not applicable".
+const facts = [
+  { term: 'Injuries', value: recall.injuries },
+  { term: 'Units affected', value: recall.unitsText },
+  { term: 'Sold at', value: recall.soldAt },
+  { term: 'Manufactured in', value: recall.country },
+  { term: 'Recall number', value: recall.recallNumber },
+].filter(fact => fact.value);
+---
+
+<Layout
+  title={`${recall.title} — Baby Safety Site`}
+  description={recall.description?.slice(0, 160) ?? `Recall details for ${recall.title}.`}
+  image={recall.imageUrl}
+>
+  <main class="mx-auto max-w-3xl p-4">
+    <a href={withBase('/recalls/')} class="link link-primary mb-4 inline-block text-sm">
+      ← All recalls
+    </a>
+
+    <article>
+      <header class="mb-6">
+        <h1 class="mb-2 text-2xl font-bold">{recall.title}</h1>
+        <p class="text-base-content/70">
+          Recalled <time datetime={recall.recallDate}>{formatRecallDate(recall.recallDate)}</time>
+        </p>
+        {
+          recall.hazardTags.length > 0 && (
+            <ul class="mt-3 flex flex-wrap gap-2" aria-label="Hazard categories">
+              {recall.hazardTags.map(tag => (
+                <li>
+                  <a
+                    href={withBase(`/hazards/${tag.slug}/`)}
+                    class="badge badge-warning hover:underline"
+                  >
+                    {tag.label}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          )
+        }
+      </header>
+
+      {
+        recall.imageUrl && (
+          <figure class="mb-6 rounded-box bg-base-200 p-4">
+            <img
+              src={recall.imageUrl}
+              alt={recall.imageCaption || recall.title}
+              class="mx-auto max-h-96 w-auto object-contain"
+              loading="lazy"
+              decoding="async"
+            />
+            {recall.imageCaption && (
+              <figcaption class="mt-2 text-center text-sm text-base-content/70">
+                {recall.imageCaption}
+              </figcaption>
+            )}
+          </figure>
+        )
+      }
+
+      {recall.description && <p class="mb-6">{recall.description}</p>}
+
+      {
+        recall.hazardTexts.length > 0 && (
+          <section class="mb-6">
+            <h2 class="mb-2 text-xl font-semibold">Hazard</h2>
+            {recall.hazardTexts.map(text => (
+              <p class="mb-2">{text}</p>
+            ))}
+          </section>
+        )
+      }
+
+      {
+        (recall.remedy || recall.remedyOptions.length > 0) && (
+          <section class="mb-6 rounded-box border border-success bg-success/10 p-4">
+            <h2 class="mb-2 text-xl font-semibold">What to do</h2>
+            {recall.remedyOptions.length > 0 && (
+              <ul class="mb-2 flex flex-wrap gap-2" aria-label="Remedy options">
+                {recall.remedyOptions.map(option => (
+                  <li class="badge badge-success">{option}</li>
+                ))}
+              </ul>
+            )}
+            {recall.remedy && <p>{recall.remedy}</p>}
+          </section>
+        )
+      }
+
+      {
+        facts.length > 0 && (
+          <section class="mb-6">
+            <h2 class="mb-2 text-xl font-semibold">Details</h2>
+            <dl class="grid gap-x-4 gap-y-2 sm:grid-cols-[max-content_1fr]">
+              {facts.map(fact => (
+                <>
+                  <dt class="font-semibold">{fact.term}</dt>
+                  <dd class="mb-2 sm:mb-0">{fact.value}</dd>
+                </>
+              ))}
+            </dl>
+          </section>
+        )
+      }
+
+      {
+        recall.consumerContact && (
+          <section class="mb-6">
+            <h2 class="mb-2 text-xl font-semibold">Contact the company</h2>
+            <p class="whitespace-pre-line">{recall.consumerContact}</p>
+          </section>
+        )
+      }
+
+      <a href={officialUrl} target="_blank" rel="noopener noreferrer" class="btn btn-primary">
+        Read the official CPSC notice <span class="sr-only">(opens in a new tab)</span>
+      </a>
+    </article>
+  </main>
+</Layout>
