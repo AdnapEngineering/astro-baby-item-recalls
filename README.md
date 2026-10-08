@@ -91,10 +91,10 @@ The site deploys to GitHub Pages at the `site`/`base` configured in [`astro.conf
 
 Runs `npm run ingest` against Turso.
 
-- **Weekly**, Fridays at 12:00 UTC (`0 12 * * 5`)
+- **Daily** at 12:00 UTC (`0 12 * * *`)
 - **Manually**, via Actions → _Ingest recalls_ → _Run workflow_, or `gh workflow run "Ingest recalls" -f days=200`
 
-Manual runs take a `days` input (default `200`) that becomes `INGEST_DAYS`. Scheduled runs leave it empty and use the script's 30-day default — a deliberately wide margin over the 7-day gap, because CPSC sometimes publishes recalls with a backdated `RecallDate` that a tighter window would miss.
+Manual runs take a `days` input (default `200`) that becomes `INGEST_DAYS`. Scheduled runs leave it empty and use the script's 30-day default — a deliberately wide margin over the 1-day gap, because CPSC sometimes publishes recalls with a backdated `RecallDate` that a tighter window would miss.
 
 ### `Deploy Astro site to GitHub Pages` — [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml)
 
