@@ -1,6 +1,7 @@
 ---
 import Layout from '../../layouts/Layout.astro';
-import { formatRecallDate, getHazardGroups, type HazardGroup } from '../../lib/hazards';
+import { formatRecallDate } from '../../lib/format';
+import { getHazardGroups, type HazardGroup } from '../../lib/hazards';
 import { withBase } from '../../lib/nav';
 
 // Data → routes: the query runs once at build time and each group it returns becomes one
