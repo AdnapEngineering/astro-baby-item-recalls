@@ -1,11 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import {
+  buildApiUrl,
   HAZARD_TAGS,
   hazardLabel,
   hazardTag,
   isChildProduct,
   parseRecallResponse,
   RecallSchemaError,
+  recallWindow,
   type RecallItem,
 } from './recalls';
 
@@ -119,5 +121,17 @@ describe('parseRecallResponse', () => {
     // Each record fails RecallID, Title, and RecallDate: 24 issues, 5 shown.
     expect(message.match(/^ {2}\d+\./gm)).toHaveLength(5);
     expect(message).toContain('…and 19 more');
+  });
+});
+
+describe('recallWindow', () => {
+  it('spans the given number of days, ending today', () => {
+    const today = new Date('2026-10-08T12:00:00Z');
+    expect(recallWindow(30, today)).toEqual({ start: '2026-09-08', end: '2026-10-08' });
+  });
+
+  it('feeds the documented API date params', () => {
+    const url = buildApiUrl({ start: '2026-09-08', end: '2026-10-08' });
+    expect(url).toContain('RecallDateStart=2026-09-08&RecallDateEnd=2026-10-08');
   });
 });

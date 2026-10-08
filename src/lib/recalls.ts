@@ -68,14 +68,23 @@ function isoDate(date: Date) {
   return date.toISOString().split('T')[0];
 }
 
+/** An inclusive RecallDate range, as YYYY-MM-DD strings. */
+export type RecallWindow = { start: string; end: string };
+
+/** The window covering the last `days` days, ending today. */
+export function recallWindow(days: number, today = new Date()): RecallWindow {
+  const start = new Date(today);
+  start.setDate(today.getDate() - days);
+  return { start: isoDate(start), end: isoDate(today) };
+}
+
 // RecallDateStart/RecallDateEnd are the REST API's documented filter params. The
 // `field_rc_*` names this previously used belong to the saferproducts.gov website's
 // Drupal views — the API ignores them and returns every recall since 1973 (~27MB).
-export function buildApiUrl(days: number) {
-  const today = new Date();
-  const start = new Date(today);
-  start.setDate(today.getDate() - days);
-  return `https://www.saferproducts.gov/RestWebServices/Recall?format=json&RecallDateStart=${isoDate(start)}&RecallDateEnd=${isoDate(today)}`;
+// Takes a window rather than a day count so the ingest can reuse the exact range it
+// fetched when deciding which stored recalls CPSC has since withdrawn.
+export function buildApiUrl({ start, end }: RecallWindow) {
+  return `https://www.saferproducts.gov/RestWebServices/Recall?format=json&RecallDateStart=${start}&RecallDateEnd=${end}`;
 }
 
 // The CPSC API has no usable product category — the `Products[].CategoryID` and

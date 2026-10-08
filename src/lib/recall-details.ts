@@ -15,7 +15,35 @@ export type RecallDetail = RecallRow & {
 };
 
 /**
+ * Keeps one row per CPSC recall number, preferring the copy the ingest saw most recently.
+ *
+ * CPSC has published the same recall under two RecallIDs and later withdrawn one. The
+ * ingest removes withdrawn copies, but only for recalls inside its fetch window; this
+ * keeps a duplicate off the page whatever the database holds. The most recently seen copy
+ * is the one CPSC still returns; ties fall back to the lower, original ID. Rows without a
+ * recall number can't be matched, so all of them are kept.
+ */
+export function dropDuplicateRecalls(rows: RecallRow[]): RecallRow[] {
+  const byNumber = new Map<string, RecallRow>();
+  const unnumbered: RecallRow[] = [];
+  for (const row of rows) {
+    if (!row.recallNumber) {
+      unnumbered.push(row);
+      continue;
+    }
+    const kept = byNumber.get(row.recallNumber);
+    const newer =
+      !kept ||
+      row.lastSeen > kept.lastSeen ||
+      (row.lastSeen === kept.lastSeen && row.recallId < kept.recallId);
+    if (newer) byNumber.set(row.recallNumber, row);
+  }
+  return [...byNumber.values(), ...unnumbered];
+}
+
+/**
  * Joins child rows onto their recalls in memory and orders the result newest first.
+ * Duplicate copies of one recall are dropped first, and their child rows with them.
  * Three flat queries plus this beat a per-recall query: the whole table is read at build
  * time anyway, and it stays a few round trips no matter how many recalls are stored.
  */
@@ -25,7 +53,7 @@ export function assembleRecallDetails(
   optionRows: RemedyOptionRow[]
 ): RecallDetail[] {
   const details = new Map<number, RecallDetail>(
-    recallRows.map(row => [
+    dropDuplicateRecalls(recallRows).map(row => [
       row.recallId,
       { ...row, hazardTexts: [], hazardTags: [], remedyOptions: [] },
     ])
