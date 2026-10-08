@@ -57,8 +57,38 @@ export class RecallSchemaError extends Error {
   }
 }
 
-/** Validates a raw CPSC response. Throws {@link RecallSchemaError} on mismatch. */
+/**
+ * Thrown when CPSC is failing on its side: an HTTP error, a network failure, or the error
+ * record described below. Unlike {@link RecallSchemaError}, retrying later may succeed.
+ */
+export class CpscUnavailableError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'CpscUnavailableError';
+  }
+}
+
+// When its own database is unreachable, the API still answers 200 OK, with a single fake
+// recall: RecallID 0, every field null, and the error in the title ("Error retrieving
+// Recalls: The underlying provider failed on Open."). Seen intermittently, at times on
+// more than half of requests. Caught before validation so it reads as an outage rather
+// than a contract change.
+function cpscErrorTitle(json: unknown): string | null {
+  if (!Array.isArray(json)) return null;
+  const error = json.find(
+    (r: { RecallID?: unknown; Title?: unknown }) =>
+      r?.RecallID === 0 && typeof r.Title === 'string' && r.Title.startsWith('Error retrieving')
+  );
+  return error ? (error.Title as string) : null;
+}
+
+/**
+ * Validates a raw CPSC response. Throws {@link CpscUnavailableError} on CPSC's error record
+ * and {@link RecallSchemaError} on any other mismatch.
+ */
 export function parseRecallResponse(json: unknown): RecallItem[] {
+  const errorTitle = cpscErrorTitle(json);
+  if (errorTitle) throw new CpscUnavailableError(`CPSC reported an error: ${errorTitle}`);
   const result = RecallResponseSchema.safeParse(json);
   if (!result.success) throw new RecallSchemaError(result.error.issues);
   return result.data;
@@ -76,6 +106,31 @@ export function recallWindow(days: number, today = new Date()): RecallWindow {
   const start = new Date(today);
   start.setDate(today.getDate() - days);
   return { start: isoDate(start), end: isoDate(today) };
+}
+
+/**
+ * Splits a window into consecutive chunks of at most `maxDays` days. Each chunk starts on
+ * the day the previous one ended — the API's boundary handling is undocumented, so a
+ * one-day overlap costs a few duplicate records (deduplicated by the caller) rather than
+ * risking a day falling between two requests.
+ */
+export function splitWindow(dateWindow: RecallWindow, maxDays: number): RecallWindow[] {
+  // Chunks overlap by a day, so a one-day chunk would never advance.
+  if (maxDays < 2) throw new RangeError(`maxDays must be at least 2, got ${maxDays}`);
+  const day = (iso: string) => new Date(`${iso}T00:00:00Z`);
+  const end = day(dateWindow.end);
+  const chunks: RecallWindow[] = [];
+  let start = day(dateWindow.start);
+  for (;;) {
+    const chunkEnd = new Date(start);
+    chunkEnd.setUTCDate(start.getUTCDate() + maxDays - 1);
+    if (chunkEnd >= end) {
+      chunks.push({ start: isoDate(start), end: dateWindow.end });
+      return chunks;
+    }
+    chunks.push({ start: isoDate(start), end: isoDate(chunkEnd) });
+    start = chunkEnd;
+  }
 }
 
 // RecallDateStart/RecallDateEnd are the REST API's documented filter params. The

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   buildApiUrl,
+  CpscUnavailableError,
   HAZARD_TAGS,
   hazardLabel,
   hazardTag,
@@ -8,6 +9,7 @@ import {
   parseRecallResponse,
   RecallSchemaError,
   recallWindow,
+  splitWindow,
   type RecallItem,
 } from './recalls';
 
@@ -95,6 +97,11 @@ describe('isChildProduct', () => {
 });
 
 describe('parseRecallResponse', () => {
+  it("reads CPSC's error record as an outage, not a schema change", () => {
+    const error = { RecallID: 0, RecallDate: null, Title: 'Error retrieving Recalls: boom' };
+    expect(() => parseRecallResponse([error])).toThrow(CpscUnavailableError);
+  });
+
   it('accepts a minimal record and strips unknown keys', () => {
     const [item] = parseRecallResponse([{ ...recall(), SomethingNew: 'ignored' }]);
     expect(item).toEqual(recall());
@@ -133,5 +140,34 @@ describe('recallWindow', () => {
   it('feeds the documented API date params', () => {
     const url = buildApiUrl({ start: '2026-09-08', end: '2026-10-08' });
     expect(url).toContain('RecallDateStart=2026-09-08&RecallDateEnd=2026-10-08');
+  });
+});
+
+describe('splitWindow', () => {
+  it('returns a short window unchanged', () => {
+    expect(splitWindow({ start: '2026-10-01', end: '2026-10-05' }, 7)).toEqual([
+      { start: '2026-10-01', end: '2026-10-05' },
+    ]);
+  });
+
+  it('covers a long window in chunks that share their boundary day', () => {
+    expect(splitWindow({ start: '2026-09-08', end: '2026-10-08' }, 7)).toEqual([
+      { start: '2026-09-08', end: '2026-09-14' },
+      { start: '2026-09-14', end: '2026-09-20' },
+      { start: '2026-09-20', end: '2026-09-26' },
+      { start: '2026-09-26', end: '2026-10-02' },
+      { start: '2026-10-02', end: '2026-10-08' },
+    ]);
+  });
+
+  it('crosses month and year boundaries', () => {
+    expect(splitWindow({ start: '2025-12-28', end: '2026-01-05' }, 7)).toEqual([
+      { start: '2025-12-28', end: '2026-01-03' },
+      { start: '2026-01-03', end: '2026-01-05' },
+    ]);
+  });
+
+  it('rejects chunks too short to advance', () => {
+    expect(() => splitWindow({ start: '2026-10-01', end: '2026-10-05' }, 1)).toThrow(RangeError);
   });
 });
