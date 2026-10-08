@@ -97,7 +97,7 @@ export default function RecallSearch({ entries, hazards }: Props) {
               rel="noopener noreferrer"
               className="link link-primary"
             >
-              cpsc.gov
+              cpsc.gov<span className="sr-only"> (opens in a new tab)</span>
             </a>
             .
           </span>
