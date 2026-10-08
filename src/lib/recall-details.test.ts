@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { RecallRow } from '../db/schema';
-import { assembleRecallDetails, toRecallSummary } from './recall-details';
+import { assembleRecallDetails, dropDuplicateRecalls, toRecallSummary } from './recall-details';
 import { filterRecalls, toSearchEntry } from './search';
 
 function recallRow(recallId: number, overrides: Partial<RecallRow> = {}): RecallRow {
@@ -111,5 +111,42 @@ describe('filterRecalls', () => {
   it('filters by hazard tag', () => {
     expect(filterRecalls(entries, '', 'fall').map(e => e.recallId)).toEqual([2]);
     expect(filterRecalls(entries, 'crib', 'fall')).toEqual([]);
+  });
+});
+
+describe('dropDuplicateRecalls', () => {
+  it('keeps the most recently seen copy of a recall number', () => {
+    const kept = dropDuplicateRecalls([
+      recallRow(10, { recallNumber: '26764', lastSeen: '2026-10-02T00:00:00.000Z' }),
+      recallRow(11, { recallNumber: '26764', lastSeen: '2026-09-11T00:00:00.000Z' }),
+    ]);
+    expect(kept.map(r => r.recallId)).toEqual([10]);
+  });
+
+  it('falls back to the lower ID when both copies were seen together', () => {
+    const kept = dropDuplicateRecalls([
+      recallRow(11, { recallNumber: '26764' }),
+      recallRow(10, { recallNumber: '26764' }),
+    ]);
+    expect(kept.map(r => r.recallId)).toEqual([10]);
+  });
+
+  it('keeps every row without a recall number', () => {
+    expect(dropDuplicateRecalls([recallRow(1), recallRow(2)])).toHaveLength(2);
+  });
+});
+
+describe('assembleRecallDetails with duplicates', () => {
+  it('drops the duplicate and ignores its child rows', () => {
+    const details = assembleRecallDetails(
+      [
+        recallRow(10, { recallNumber: '26764', lastSeen: '2026-10-02T00:00:00.000Z' }),
+        recallRow(11, { recallNumber: '26764', lastSeen: '2026-09-11T00:00:00.000Z' }),
+      ],
+      [{ recallId: 11, name: 'Tip-over hazard', tag: 'tip-over' }],
+      [{ recallId: 11, option: 'Refund' }]
+    );
+    expect(details).toHaveLength(1);
+    expect(details[0]).toMatchObject({ recallId: 10, hazardTags: [], remedyOptions: [] });
   });
 });
