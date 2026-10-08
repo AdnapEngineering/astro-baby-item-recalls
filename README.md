@@ -33,18 +33,19 @@ The CPSC API has no usable product category field, so children's products are id
 
 ## Project layout
 
-| Path                        | What lives there                                                                 |
-| --------------------------- | -------------------------------------------------------------------------------- |
-| `src/pages/`                | Routes — home, about, recall search/detail, and hazard index/detail pages        |
-| `src/components/`           | Header/footer, the shared recall list row, and the search island                 |
-| `src/db/schema.ts`          | Drizzle schema: `recalls`, `hazards`, `remedy_options`                           |
-| `src/db/client.ts`          | libSQL client; reads `DATABASE_URL` / `DATABASE_AUTH_TOKEN`                      |
-| `src/lib/recalls.ts`        | CPSC API parsing, child-product matching, and the hazard tag/label/pattern table |
-| `src/lib/recall-data.ts`    | The build-time DB load every page shares (memoised per build)                    |
-| `src/lib/recall-details.ts` | Pure reshaping of DB rows into page data; `hazard-groups.ts` and `search.ts` too |
-| `scripts/ingest.ts`         | The ingest job — fetches CPSC recalls and upserts into Turso                     |
-| `scripts/upsert-recall.ts`  | One recall's writes, as a single atomic `db.batch`                               |
-| `drizzle.config.ts`         | Drizzle Kit config for generating/applying migrations                            |
+| Path                        | What lives there                                                                  |
+| --------------------------- | --------------------------------------------------------------------------------- |
+| `src/pages/`                | Routes — home, about, recall search/detail, and hazard index/detail pages         |
+| `src/components/`           | Header/footer, the shared recall list row, and the search island                  |
+| `src/db/schema.ts`          | Drizzle schema: `recalls`, `hazards`, `remedy_options`                            |
+| `src/db/client.ts`          | libSQL client; reads `DATABASE_URL` / `DATABASE_AUTH_TOKEN`                       |
+| `src/lib/recalls.ts`        | CPSC API parsing, child-product matching, and the hazard tag/label/pattern table  |
+| `src/lib/recall-data.ts`    | The build-time DB load every page shares (memoised per build)                     |
+| `src/lib/recall-details.ts` | Pure reshaping of DB rows into page data; `hazard-groups.ts` and `search.ts` too  |
+| `scripts/ingest.ts`         | The ingest job — fetches CPSC recalls and upserts into Turso                      |
+| `scripts/upsert-recall.ts`  | One recall's writes, as a single atomic `db.batch`                                |
+| `scripts/remove-stale.ts`   | Removes recalls CPSC has withdrawn or whose RecallID it reused for another recall |
+| `drizzle.config.ts`         | Drizzle Kit config for generating/applying migrations                             |
 
 ## Local development
 
@@ -82,6 +83,8 @@ INGEST_DAYS=200 npm run ingest   # wider window, e.g. an initial backfill
 ```
 
 The ingest upserts on the CPSC `recallId`, so re-running it — at any window size — refreshes existing rows rather than duplicating them. A backfill is a one-time operation; there is no reason to run a wide window twice. Each recall's row and its hazard/remedy rows are written in one transaction, so a run that fails midway leaves every recall either fully updated or untouched. The log line reports how many recalls were new versus updated.
+
+`RecallID` is not a stable identity, though: CPSC has published one recall under two IDs and later reused the spare ID for an unrelated recall. After upserting, the ingest removes stored recalls that CPSC has withdrawn (dated inside the fetched window, ID no longer returned) or reassigned (ID returned with a different recall number), and logs their IDs. It skips the cleanup — with a warning on the Actions run — if CPSC returned nothing or more than 10 rows would go. As a backstop, the build shows only one row per recall number, so a duplicate never reaches the page even before the ingest removes it.
 
 ## Deployment
 
