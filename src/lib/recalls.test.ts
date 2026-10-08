@@ -4,7 +4,6 @@ import {
   hazardLabel,
   hazardTag,
   isChildProduct,
-  mapRecalls,
   parseRecallResponse,
   RecallSchemaError,
   type RecallItem,
@@ -120,16 +119,5 @@ describe('parseRecallResponse', () => {
     // Each record fails RecallID, Title, and RecallDate: 24 issues, 5 shown.
     expect(message.match(/^ {2}\d+\./gm)).toHaveLength(5);
     expect(message).toContain('…and 19 more');
-  });
-});
-
-describe('mapRecalls', () => {
-  it('drops adult products and falls back when there is no product name', () => {
-    const cards = mapRecalls([
-      recall({ RecallID: 1, Title: 'Baby Monitor Recall' }),
-      recall({ RecallID: 2, Title: 'Lawn Mower Recall' }),
-    ]);
-    expect(cards).toHaveLength(1);
-    expect(cards[0]).toMatchObject({ id: 1, productName: 'No details provided' });
   });
 });

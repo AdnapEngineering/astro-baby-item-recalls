@@ -64,22 +64,6 @@ export function parseRecallResponse(json: unknown): RecallItem[] {
   return result.data;
 }
 
-export type RecallCardItem = {
-  id: number;
-  name: string;
-  productName: string;
-  recallDate: string;
-  link: string;
-  consumerContact?: string;
-  retailers: string[];
-};
-
-/** Default look-back window, in days, for the recalls list. */
-export const DEFAULT_DAYS = 20;
-
-/** Maximum number of recalls rendered, after child-product filtering. */
-export const MAX_RECALLS = 20;
-
 function isoDate(date: Date) {
   return date.toISOString().split('T')[0];
 }
@@ -155,25 +139,4 @@ export function isChildProduct(item: RecallItem) {
     .filter(Boolean)
     .join(' ');
   return CHILD_KEYWORDS.test(haystack);
-}
-
-export function mapRecalls(data: RecallItem[]): RecallCardItem[] {
-  return data
-    .filter(isChildProduct)
-    .slice(0, MAX_RECALLS)
-    .map(item => ({
-      id: item.RecallID,
-      name: item.Title,
-      productName: item.Products?.[0]?.Name ?? 'No details provided',
-      recallDate: item.RecallDate,
-      link: item.URL ?? 'https://www.cpsc.gov/Recalls',
-      consumerContact: item.ConsumerContact,
-      retailers: item.Retailers?.map(r => r.Name) ?? [],
-    }));
-}
-
-export async function fetchRecalls(days: number): Promise<RecallCardItem[]> {
-  const res = await fetch(buildApiUrl(days));
-  if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
-  return mapRecalls(parseRecallResponse(await res.json()));
 }

@@ -15,9 +15,10 @@ import Layout from '../layouts/Layout.astro';
     <section class="mb-8">
       <h2 class="mb-2 text-xl font-semibold">What it does</h2>
       <p>
-        The home page lists recent recalls of children's products, newest first. Each card links to
-        the official recall notice, and expands to show consumer contact details and the retailers
-        that sold the item.
+        It collects recalls of children's products so you can search them by product, brand, or
+        store, or browse them by hazard. Each recall has its own page with a photo, the hazard, what
+        to do (refund, repair, or replace), where it was sold, how to contact the company, and a
+        link to the official notice.
       </p>
     </section>
 
@@ -29,21 +30,26 @@ import Layout from '../layouts/Layout.astro';
           target="_blank"
           rel="noopener noreferrer"
           class="link link-primary">U.S. Consumer Product Safety Commission</a
-        > public recalls API, filtered to the children's product category.
+        > public recalls API, filtered to children's products by keyword.
       </p>
       <p>
         Nothing is written or edited by hand — this site only reformats what the CPSC publishes. It
         is not affiliated with or endorsed by the CPSC. For anything official, follow the link on a
-        recall card through to <span class="font-medium">cpsc.gov</span>.
+        recall page through to <span class="font-medium">cpsc.gov</span>.
       </p>
     </section>
 
     <section class="mb-8">
       <h2 class="mb-2 text-xl font-semibold">How current it is</h2>
       <p>
-        Recalls are fetched when the site is built and published, so the list reflects the most
-        recent deploy. The <span class="font-medium">↻ Refresh</span> button on the home page pulls live
-        results straight from the CPSC if you want to be certain you are seeing the newest data.
+        New recalls are collected from the CPSC once a week and the site is republished straight
+        after, so a recall announced today can take up to a week to appear here. The home page shows
+        when the data was last updated. For the very latest announcements, check <a
+          href="https://www.cpsc.gov/Recalls"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="link link-primary">cpsc.gov/Recalls</a
+        >.
       </p>
     </section>
 

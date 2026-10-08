@@ -3,7 +3,15 @@ import type { RecallSummary } from '../lib/recall-details';
 
 // A React component rather than an .astro one so the same row renders statically on the
 // hazard pages and interactively inside the search island.
-export default function RecallListItem({ recall }: { recall: RecallSummary }) {
+export default function RecallListItem({
+  recall,
+  headingLevel = 2,
+}: {
+  recall: RecallSummary;
+  /** One below the heading the list sits under, so the outline never skips a level. */
+  headingLevel?: 2 | 3;
+}) {
+  const Heading = `h${headingLevel}` as const;
   return (
     <li className="card card-side items-start gap-4 bg-base-200 p-4">
       {recall.imageUrl && (
@@ -18,12 +26,11 @@ export default function RecallListItem({ recall }: { recall: RecallSummary }) {
         />
       )}
       <div className="min-w-0 flex-1 space-y-1">
-        {/* h2: every list using this sits directly under the page's h1. */}
-        <h2 className="font-medium">
+        <Heading className="font-medium">
           <a href={withBase(`/recalls/${recall.recallId}/`)} className="link link-primary">
             {recall.title}
           </a>
-        </h2>
+        </Heading>
         <p className="text-sm text-base-content/70">
           <time dateTime={recall.recallDate}>{recall.dateLabel}</time>
           {recall.hazardTags.length > 0 && (
