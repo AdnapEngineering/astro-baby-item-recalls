@@ -126,7 +126,7 @@ export default function RecallsIsland({ days = DEFAULT_DAYS, initialData }: Prop
               <h3 className="card-title">{item.name}</h3>
 
               <p>
-                <span className="font-semibold">Product:</span> {item.reason}
+                <span className="font-semibold">Product:</span> {item.productName}
               </p>
               <p>
                 <span className="font-semibold">Recall Date:</span> {formatDate(item.recallDate)}

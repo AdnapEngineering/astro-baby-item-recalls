@@ -1,21 +1,7 @@
 import { eq, isNotNull } from 'drizzle-orm';
 import { db } from '../db/client';
 import { recalls, hazards } from '../db/schema';
-
-// hazardTag() already emits lowercase, hyphenated values, so the tag doubles as the URL
-// slug and no slugify step is needed. What is needed is the inverse: the `name` column
-// holds CPSC's full hazard paragraph, which is unusable as a heading. Keys must stay in
-// sync with HAZARD_TAGS in recalls.ts — an unmapped tag falls back to the raw slug.
-const HAZARD_LABELS: Record<string, string> = {
-  battery: 'Button battery ingestion',
-  suffocation: 'Suffocation',
-  'tip-over': 'Tip-over',
-  entrapment: 'Entrapment',
-  choking: 'Choking',
-  fall: 'Fall or collapse',
-  fire: 'Fire, burn, or shock',
-  drowning: 'Drowning',
-};
+import { hazardLabel } from './recalls';
 
 // CPSC returns dates as full timestamps ("2026-07-30T00:00:00"), which is what the DB
 // stores and what sorting relies on — so formatting happens here at render, not at ingest.
@@ -65,7 +51,7 @@ export async function getHazardGroups(): Promise<HazardGroup[]> {
   const groups = new Map<string, HazardGroup>();
   for (const row of rows) {
     const slug = row.tag!; // non-null by the isNotNull filter above
-    const group = groups.get(slug) ?? { slug, name: HAZARD_LABELS[slug] ?? slug, recalls: [] };
+    const group = groups.get(slug) ?? { slug, name: hazardLabel(slug), recalls: [] };
     // One recall can carry several hazard paragraphs that reduce to the same tag (two
     // different fire descriptions, say). Count it once, or it renders twice and inflates
     // the badge. The reverse is intended: a recall belongs to every tag it matches.
