@@ -1,8 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { groupByHazard, type HazardJoinRow } from './hazard-groups';
 
-function row(tag: string, recallId: number, recallDate: string): HazardJoinRow {
-  return { tag, recallId, title: `Recall ${recallId}`, url: null, recallDate };
+type Recall = { recallId: number; title: string; recallDate: string };
+
+function row(tag: string, recallId: number, recallDate: string): HazardJoinRow<Recall> {
+  return { tag, recallId, title: `Recall ${recallId}`, recallDate };
 }
 
 describe('groupByHazard', () => {

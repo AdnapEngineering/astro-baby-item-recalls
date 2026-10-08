@@ -2,26 +2,24 @@ import { hazardLabel } from './recalls';
 
 // Kept free of the DB client so the reshaping can be unit-tested on plain rows.
 
-export type HazardRecall = {
-  recallId: number;
-  title: string;
-  url: string | null;
-  recallDate: string;
-};
+type GroupableRecall = { recallId: number; recallDate: string };
 
-/** One row of the hazards→recalls join, with untagged hazards already filtered out. */
-export type HazardJoinRow = HazardRecall & { tag: string };
+/** One recall–tag pairing, with untagged hazards already filtered out. */
+export type HazardJoinRow<R extends GroupableRecall> = R & { tag: string };
 
-export type HazardGroup = {
+export type HazardGroup<R extends GroupableRecall> = {
   slug: string;
   name: string;
-  recalls: HazardRecall[];
+  recalls: R[];
 };
 
-/** Reshapes the flat hazards→recalls join into one group per hazard tag, largest first. */
-export function groupByHazard(rows: HazardJoinRow[]): HazardGroup[] {
-  const groups = new Map<string, HazardGroup>();
-  for (const { tag, ...recall } of rows) {
+/** Reshapes flat recall–tag rows into one group per hazard tag, largest first. */
+export function groupByHazard<R extends GroupableRecall>(
+  rows: HazardJoinRow<R>[]
+): HazardGroup<R>[] {
+  const groups = new Map<string, HazardGroup<R>>();
+  for (const { tag, ...rest } of rows) {
+    const recall = rest as unknown as R;
     const group = groups.get(tag) ?? { slug: tag, name: hazardLabel(tag), recalls: [] };
     // One recall can carry several hazard paragraphs that reduce to the same tag (two
     // different fire descriptions, say). Count it once, or it renders twice and inflates
