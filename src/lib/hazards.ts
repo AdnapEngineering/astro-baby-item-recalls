@@ -1,38 +1,28 @@
-import { eq, isNotNull } from 'drizzle-orm';
-import { db } from '../db/client';
-import { recalls, hazards } from '../db/schema';
 import { groupByHazard, type HazardGroup } from './hazard-groups';
+import { getRecallDetails } from './recall-data';
+import { toRecallSummary, type RecallSummary } from './recall-details';
 
-export type { HazardGroup } from './hazard-groups';
+export type HazardRecallGroup = HazardGroup<RecallSummary>;
 
 /** Recalls in one group past which the detail page stops being comfortably browsable. */
 const PAGINATE_THRESHOLD = 100;
 
 /**
- * Loads the hazards→recalls join and reshapes it into one group per hazard tag.
+ * Groups every stored recall by hazard tag, largest group first.
  *
  * Runs at build time only: `getStaticPaths` turns each group into a static route, so the
- * deployed site never touches the database.
+ * deployed site never touches the database. Built on the same memoised load as the recall
+ * pages, so it costs no extra queries — and hazards whose recall row is missing, or whose
+ * paragraph matched no tag, are already absent from it.
  */
-export async function getHazardGroups(): Promise<HazardGroup[]> {
-  const rows = await db
-    .select({
-      tag: hazards.tag,
-      recallId: recalls.recallId,
-      title: recalls.title,
-      url: recalls.url,
-      recallDate: recalls.recallDate,
+export async function getHazardGroups(): Promise<HazardRecallGroup[]> {
+  const details = await getRecallDetails();
+  const groups = groupByHazard(
+    details.flatMap(detail => {
+      const summary = toRecallSummary(detail);
+      return detail.hazardTags.map(({ slug }) => ({ ...summary, tag: slug }));
     })
-    .from(hazards)
-    // Inner, not left: a hazard whose recall is missing is a broken foreign key, and a
-    // card with no title is worse than no card.
-    .innerJoin(recalls, eq(hazards.recallId, recalls.recallId))
-    // hazardTag() returns null for paragraphs matching none of its patterns. Those rows
-    // have no slug and no heading, so there is no page they could belong to.
-    .where(isNotNull(hazards.tag));
-
-  // The isNotNull filter above guarantees a tag, but Drizzle's inferred type can't see it.
-  const groups = groupByHazard(rows.map(row => ({ ...row, tag: row.tag! })));
+  );
 
   // Ingest appends indefinitely, so groups only grow. Long before the page weight matters,
   // an unbroken list stops being browsable — that is the point to reach for Astro's
