@@ -4,7 +4,7 @@ import { buildApiUrl, isChildProduct, parseRecallResponse, recallWindow } from '
 import { removeStaleRecalls } from './remove-stale';
 import { upsertRecall } from './upsert-recall';
 
-// How far back to ask the CPSC API for. The default covers the weekly schedule with a
+// How far back to ask the CPSC API for. The default covers the daily schedule with a
 // wide margin for late-published recalls; a one-off backfill overrides it with
 // INGEST_DAYS. Re-running a wider window is safe — rows upsert on recallId.
 // Scheduled Actions runs set this to the empty string rather than leaving it unset, so
