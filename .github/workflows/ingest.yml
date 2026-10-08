@@ -2,7 +2,7 @@ name: Ingest recalls
 
 on:
   schedule:
-    - cron: '0 12 * * 5' # weekly, Friday 12:00 UTC
+    - cron: '0 12 * * *' # daily, 12:00 UTC
   # Manual runs can widen the window — use this once to backfill history, then let the
   # schedule keep it current. Backfilling twice is harmless but pointless: rows upsert
   # on recallId, so a re-run just rewrites what is already there.
