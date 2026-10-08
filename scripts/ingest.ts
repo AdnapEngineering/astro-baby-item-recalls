@@ -1,6 +1,7 @@
 import 'dotenv/config';
 import { db } from '../src/db/client';
-import { buildApiUrl, isChildProduct, parseRecallResponse, recallWindow } from '../src/lib/recalls';
+import { isChildProduct, recallWindow } from '../src/lib/recalls';
+import { fetchWindowWithRetry } from './fetch-recalls';
 import { removeStaleRecalls } from './remove-stale';
 import { upsertRecall } from './upsert-recall';
 
@@ -17,10 +18,7 @@ if (!Number.isFinite(DAYS) || DAYS <= 0) {
 
 async function main() {
   const dateWindow = recallWindow(DAYS);
-  const res = await fetch(buildApiUrl(dateWindow));
-  if (!res.ok) throw new Error(`CPSC ${res.status}`);
-
-  const all = parseRecallResponse(await res.json());
+  const all = await fetchWindowWithRetry(dateWindow);
   const items = all.filter(isChildProduct);
 
   const now = new Date().toISOString();
