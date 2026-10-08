@@ -1,0 +1,36 @@
+---
+import RecallSearch from '../../components/RecallSearch.tsx';
+import Layout from '../../layouts/Layout.astro';
+import { getRecallDetails } from '../../lib/recall-data';
+import { HAZARD_TAGS } from '../../lib/recalls';
+import { toSearchEntry } from '../../lib/search';
+
+// Build-time query: the island receives the whole list as props and filters it in the
+// browser, so the deployed page has no database behind it.
+const entries = (await getRecallDetails()).map(toSearchEntry);
+// Only offer hazards that at least one stored recall carries, in the canonical order.
+const hazards = HAZARD_TAGS.filter(h =>
+  entries.some(e => e.hazardTags.some(t => t.slug === h.tag))
+).map(({ tag, label }) => ({ slug: tag, label }));
+---
+
+<Layout
+  title="Search recalls — Baby Safety Site"
+  description="Search every children's product recall on this site by product, brand, store, or hazard."
+>
+  <main class="mx-auto max-w-3xl p-4">
+    <h1 class="mb-2 text-2xl font-bold">Search recalls</h1>
+    <p class="mb-6 text-base-content/80">
+      Type a product, brand, or store to check whether something you own has been recalled.
+    </p>
+    {
+      entries.length === 0 ? (
+        <div class="alert alert-info">
+          <span>No recalls to show yet — the recall database has not been populated.</span>
+        </div>
+      ) : (
+        <RecallSearch entries={entries} hazards={hazards} client:load />
+      )
+    }
+  </main>
+</Layout>

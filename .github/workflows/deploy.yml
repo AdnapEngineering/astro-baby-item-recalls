@@ -39,6 +39,14 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      # Neither step touches the database, so a type error or failing test stops the
+      # deploy before the build spends time querying Turso.
+      - name: Type check
+        run: npm run check
+
+      - name: Unit tests
+        run: npm test
+
       - name: Build with Astro
         run: npm run build
         # getStaticPaths queries Turso at build time; without these the client falls back

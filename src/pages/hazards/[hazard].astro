@@ -1,6 +1,7 @@
 ---
+import RecallListItem from '../../components/RecallListItem.tsx';
 import Layout from '../../layouts/Layout.astro';
-import { formatRecallDate, getHazardGroups, type HazardGroup } from '../../lib/hazards';
+import { getHazardGroups, type HazardRecallGroup } from '../../lib/hazards';
 import { withBase } from '../../lib/nav';
 
 // Data → routes: the query runs once at build time and each group it returns becomes one
@@ -10,7 +11,7 @@ export async function getStaticPaths() {
   return groups.map(group => ({ params: { hazard: group.slug }, props: { group } }));
 }
 
-const { group } = Astro.props as { group: HazardGroup };
+const { group } = Astro.props as { group: HazardRecallGroup };
 const count = group.recalls.length;
 ---
 
@@ -27,24 +28,9 @@ const count = group.recalls.length;
       {count} recall{count === 1 ? '' : 's'} with this hazard, newest first.
     </p>
 
+    {/* No client directive: the rows render to static HTML here, with no JS shipped. */}
     <ul class="space-y-3">
-      {
-        group.recalls.map(recall => (
-          <li class="card gap-1 bg-base-200 p-4">
-            <a
-              href={recall.url ?? 'https://www.cpsc.gov/Recalls'}
-              target="_blank"
-              rel="noopener noreferrer"
-              class="link link-primary font-medium"
-            >
-              {recall.title}
-            </a>
-            <time datetime={recall.recallDate} class="text-sm text-base-content/60">
-              {formatRecallDate(recall.recallDate)}
-            </time>
-          </li>
-        ))
-      }
+      {group.recalls.map(recall => <RecallListItem recall={recall} />)}
     </ul>
   </main>
 </Layout>
