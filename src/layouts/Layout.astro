@@ -6,12 +6,20 @@ import '../styles/global.css';
 interface Props {
   title: string;
   description?: string;
+  /** Absolute URL of a preview image for link unfurls; recall pages pass the product photo. */
+  image?: string | null;
 }
 
 const {
   title,
   description = 'Stay informed about baby and child product recalls from the U.S. Consumer Product Safety Commission.',
+  image,
 } = Astro.props;
+
+// Astro.url.pathname already carries the base path, so resolving it against the
+// configured `site` origin yields the public URL. Falls back to the request URL if `site`
+// is ever removed from astro.config.mjs.
+const canonical = new URL(Astro.url.pathname, Astro.site ?? Astro.url).href;
 ---
 
 <!doctype html>
@@ -21,12 +29,26 @@ const {
     <meta name="description" content={description} />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <link rel="icon" type="image/svg+xml" href={`${import.meta.env.BASE_URL}favicon.svg`} />
+    <link rel="canonical" href={canonical} />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Baby Safety Site" />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    {image && <meta property="og:image" content={image} />}
+    <meta name="twitter:card" content={image ? 'summary_large_image' : 'summary'} />
     <meta name="generator" content={Astro.generator} />
     <title>{title}</title>
   </head>
   <body class="flex min-h-screen flex-col">
+    <a
+      href="#main"
+      class="btn btn-primary btn-sm sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50"
+    >
+      Skip to main content
+    </a>
     <Header />
-    <div class="flex-1">
+    <div id="main" tabindex="-1" class="flex-1 focus:outline-none">
       <slot />
     </div>
     <Footer />

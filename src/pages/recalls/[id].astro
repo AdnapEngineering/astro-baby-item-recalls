@@ -29,6 +29,7 @@ const facts = [
 <Layout
   title={`${recall.title} — Baby Safety Site`}
   description={recall.description?.slice(0, 160) ?? `Recall details for ${recall.title}.`}
+  image={recall.imageUrl}
 >
   <main class="mx-auto max-w-3xl p-4">
     <a href={withBase('/recalls/')} class="link link-primary mb-4 inline-block text-sm">
