@@ -1,10 +1,17 @@
 import { sqliteTable, integer, text, index } from 'drizzle-orm/sqlite-core';
+import { sql } from 'drizzle-orm';
+
+export type ProductIdentifier = { name: string | null; model: string | null };
 
 export const recalls = sqliteTable('recalls', {
   recallId: integer('recall_id').primaryKey(),
   recallNumber: text('recall_number'), // public-facing number, distinct from the API's RecallID
   title: text('title').notNull(),
   description: text('description'),
+  productIdentifiers: text('product_identifiers', { mode: 'json' })
+    .$type<ProductIdentifier[]>()
+    .notNull()
+    .default(sql`'[]'`),
   recallDate: text('recall_date').notNull(), //ISO string
   lastPublishDate: text('last_publish_date'), // CPSC's own change marker
   url: text('url'),

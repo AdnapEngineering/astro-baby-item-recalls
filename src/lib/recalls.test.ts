@@ -107,6 +107,13 @@ describe('parseRecallResponse', () => {
     expect(item).toEqual(recall());
   });
 
+  it('preserves CPSC product names and model numbers', () => {
+    const [item] = parseRecallResponse([
+      { ...recall(), Products: [{ Name: 'Acme Infant Sleeper', Model: 'IS-204' }] },
+    ]);
+    expect(item.Products).toEqual([{ Name: 'Acme Infant Sleeper', Model: 'IS-204' }]);
+  });
+
   it('throws RecallSchemaError when a required field is missing', () => {
     expect(() => parseRecallResponse([{ RecallID: 1 }])).toThrow(RecallSchemaError);
   });

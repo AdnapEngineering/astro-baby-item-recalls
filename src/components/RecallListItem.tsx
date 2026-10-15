@@ -37,6 +37,19 @@ export default function RecallListItem({
             <> · {recall.hazardTags.map(tag => tag.label).join(', ')}</>
           )}
         </p>
+        {recall.productIdentifiers.length > 0 && (
+          <p className="line-clamp-2 text-sm">
+            <span className="font-semibold">Product:</span>{' '}
+            {recall.productIdentifiers
+              .map(product =>
+                [product.name, product.model && `Model ${product.model}`]
+                  .filter(Boolean)
+                  .join(' · ')
+              )
+              .filter(Boolean)
+              .join('; ')}
+          </p>
+        )}
         {recall.remedyOptions.length > 0 && (
           <p className="text-sm">
             <span className="font-semibold">Remedy:</span> {recall.remedyOptions.join(', ')}

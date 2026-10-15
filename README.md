@@ -17,7 +17,7 @@ The CPSC API has no usable product category field, so children's products are id
 ## Features
 
 - **_Searchable list:_** `/recalls/` lists every stored recall, newest first, with a keyword and hazard filter that runs in the browser over build-time data. Filters sync to `?q=` and `?hazard=`, so a search can be shared, and the home page's search box hands off to it.
-- **_Recall detail pages:_** `/recalls/<id>/` shows everything stored for a recall — photo, hazards, remedy and remedy options, injuries, units, where sold, contact info, and the official CPSC link.
+- **_Recall detail pages:_** `/recalls/<id>/` shows everything stored for a recall — photo, product names and model numbers, hazards, remedy and remedy options, injuries, units, where sold, contact info, and the official CPSC link.
 - **_Hazard browsing:_** Recalls are tagged by hazard type with a page per hazard, each row showing a thumbnail and the remedy.
 - **_Latest recalls:_** The home page shows the newest stored recalls and when the data was last updated.
 - **_Responsive design:_** Built with modern web standards for a good experience across devices.
@@ -63,6 +63,8 @@ DATABASE_AUTH_TOKEN=your-token
 ```
 
 Both are optional locally — without `DATABASE_URL` the client falls back to a local SQLite file at `file:./data/recalls.db`. Note that this fallback is also what makes a missing credential fail confusingly in CI: the build succeeds at connecting and then finds no tables.
+
+For an existing database, apply [`src/db/migrations/0001_product_identifiers.sql`](src/db/migrations/0001_product_identifiers.sql) once before running ingestion or building the site. Then run a wider ingest, such as `INGEST_DAYS=200 npm run ingest`, to populate product names and model numbers for existing recalls in that date window.
 
 ```bash
 npm run dev      # dev server

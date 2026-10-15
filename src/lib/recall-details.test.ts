@@ -9,6 +9,7 @@ function recallRow(recallId: number, overrides: Partial<RecallRow> = {}): Recall
     recallNumber: null,
     title: `Recall ${recallId}`,
     description: null,
+    productIdentifiers: [],
     recallDate: '2026-01-01T00:00:00',
     lastPublishDate: null,
     url: null,
@@ -102,6 +103,19 @@ describe('filterRecalls', () => {
   it('requires every term, case-insensitively and in any order', () => {
     expect(filterRecalls(entries, 'TARGET crib').map(e => e.recallId)).toEqual([1]);
     expect(filterRecalls(entries, 'crib stroller')).toEqual([]);
+  });
+
+  it('searches product names and model numbers', () => {
+    const [entry] = assembleRecallDetails(
+      [
+        recallRow(3, {
+          productIdentifiers: [{ name: 'Acme Infant Sleeper', model: 'IS-204' }],
+        }),
+      ],
+      [],
+      []
+    ).map(toSearchEntry);
+    expect(filterRecalls([entry], 'Acme IS-204').map(e => e.recallId)).toEqual([3]);
   });
 
   it('searches hazard labels', () => {

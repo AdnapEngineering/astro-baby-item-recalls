@@ -82,6 +82,27 @@ const facts = [
       {recall.description && <p class="mb-6">{recall.description}</p>}
 
       {
+        recall.productIdentifiers.length > 0 && (
+          <section class="mb-6">
+            <h2 class="mb-2 text-xl font-semibold">Products and model numbers</h2>
+            <ul class="space-y-2">
+              {recall.productIdentifiers.map(product => (
+                <li>
+                  {product.name && <span>{product.name}</span>}
+                  {product.name && product.model && <span> · </span>}
+                  {product.model && (
+                    <span>
+                      <span class="font-semibold">Model:</span> {product.model}
+                    </span>
+                  )}
+                </li>
+              ))}
+            </ul>
+          </section>
+        )
+      }
+
+      {
         recall.hazardTexts.length > 0 && (
           <section class="mb-6">
             <h2 class="mb-2 text-xl font-semibold">Hazard</h2>

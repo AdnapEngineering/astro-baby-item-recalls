@@ -1,4 +1,4 @@
-import type { HazardRow, RecallRow, RemedyOptionRow } from '../db/schema';
+import type { HazardRow, ProductIdentifier, RecallRow, RemedyOptionRow } from '../db/schema';
 import { formatRecallDate } from './format';
 import { hazardLabel } from './recalls';
 
@@ -12,6 +12,8 @@ export type RecallDetail = RecallRow & {
   hazardTags: { slug: string; label: string }[];
   /** Refund | Repair | Replace, deduplicated. */
   remedyOptions: string[];
+  /** Product names and model numbers supplied by CPSC, in API order. */
+  productIdentifiers: ProductIdentifier[];
 };
 
 /**
@@ -96,6 +98,7 @@ export type RecallSummary = {
   remedy: string | null;
   remedyOptions: string[];
   hazardTags: { slug: string; label: string }[];
+  productIdentifiers: ProductIdentifier[];
 };
 
 export function toRecallSummary(detail: RecallDetail): RecallSummary {
@@ -109,5 +112,6 @@ export function toRecallSummary(detail: RecallDetail): RecallSummary {
     remedy: detail.remedy,
     remedyOptions: detail.remedyOptions,
     hazardTags: detail.hazardTags,
+    productIdentifiers: detail.productIdentifiers,
   };
 }

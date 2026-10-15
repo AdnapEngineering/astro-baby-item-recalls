@@ -11,6 +11,7 @@ export function toSearchEntry(detail: RecallDetail): SearchEntry {
   const haystack = [
     detail.title,
     detail.description,
+    ...detail.productIdentifiers.flatMap(product => [product.name, product.model]),
     detail.soldAt,
     detail.recallNumber,
     ...detail.hazardTags.map(tag => tag.label),

@@ -19,6 +19,7 @@ const item: RecallItem = {
   RecallID: 1,
   Title: 'Acme Recalls Cribs',
   RecallDate: '2026-07-30T00:00:00',
+  Products: [{ Name: 'Acme Convertible Crib', Model: 'AC-123' }, { Name: 'Acme Crib Mattress' }],
   Hazards: [{ Name: 'Entrapment hazard' }],
   RemedyOptions: [{ Option: 'Refund' }],
   Images: [{ URL: 'https://example.com/crib.jpg', Caption: 'Recalled crib' }],
@@ -29,7 +30,14 @@ describe('upsertRecall', () => {
     expect(await upsertRecall(db, item, 'run-1')).toBe('inserted');
 
     const [row] = await db.select().from(recalls);
-    expect(row).toMatchObject({ title: 'Acme Recalls Cribs', imageCaption: 'Recalled crib' });
+    expect(row).toMatchObject({
+      title: 'Acme Recalls Cribs',
+      imageCaption: 'Recalled crib',
+      productIdentifiers: [
+        { name: 'Acme Convertible Crib', model: 'AC-123' },
+        { name: 'Acme Crib Mattress', model: null },
+      ],
+    });
     expect(await db.select().from(hazards)).toEqual([
       { recallId: 1, name: 'Entrapment hazard', tag: 'entrapment' },
     ]);
@@ -38,11 +46,20 @@ describe('upsertRecall', () => {
 
   it('updates an existing recall, keeping firstSeen and replacing child rows', async () => {
     await upsertRecall(db, item, 'run-1');
-    const changed = { ...item, Hazards: [{ Name: 'Fall hazard' }], RemedyOptions: [] };
+    const changed = {
+      ...item,
+      Products: [{ Name: 'Updated Crib', Model: 'AC-456' }],
+      Hazards: [{ Name: 'Fall hazard' }],
+      RemedyOptions: [],
+    };
     expect(await upsertRecall(db, changed, 'run-2')).toBe('updated');
 
     const [row] = await db.select().from(recalls);
-    expect(row).toMatchObject({ firstSeen: 'run-1', lastSeen: 'run-2' });
+    expect(row).toMatchObject({
+      firstSeen: 'run-1',
+      lastSeen: 'run-2',
+      productIdentifiers: [{ name: 'Updated Crib', model: 'AC-456' }],
+    });
     expect(await db.select().from(hazards)).toEqual([
       { recallId: 1, name: 'Fall hazard', tag: 'fall' },
     ]);

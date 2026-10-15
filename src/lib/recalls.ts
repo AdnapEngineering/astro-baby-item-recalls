@@ -5,6 +5,7 @@ import { z } from 'zod';
 // API returns many fields this site ignores, and new ones should not break the build.
 const RecallProductSchema = z.object({
   Name: z.string().optional(),
+  Model: z.string().optional(),
   NumberOfUnits: z.string().optional(),
 });
 const OrganizationSchema = z.object({ Name: z.string() });
