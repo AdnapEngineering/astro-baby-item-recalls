@@ -27,6 +27,12 @@ export async function upsertRecall(
     recallNumber: item.RecallNumber ?? null,
     title: item.Title,
     description: item.Description ?? null,
+    productIdentifiers: (item.Products ?? [])
+      .filter(product => product.Name?.trim() || product.Model?.trim())
+      .map(product => ({
+        name: product.Name?.trim() || null,
+        model: product.Model?.trim() || null,
+      })),
     recallDate: item.RecallDate,
     lastPublishDate: item.LastPublishDate ?? null,
     url: item.URL ?? null,

@@ -14,7 +14,8 @@ export async function createTestDb(): Promise<{ db: LibSQLDatabase; cleanup: () 
   await client.executeMultiple(`
     CREATE TABLE recalls (
       recall_id INTEGER PRIMARY KEY, recall_number TEXT, title TEXT NOT NULL,
-      description TEXT, recall_date TEXT NOT NULL, last_publish_date TEXT, url TEXT,
+      description TEXT, product_identifiers TEXT NOT NULL DEFAULT '[]',
+      recall_date TEXT NOT NULL, last_publish_date TEXT, url TEXT,
       image_url TEXT, image_caption TEXT, consumer_contact TEXT, remedy TEXT, injuries TEXT,
       units_text TEXT, sold_at TEXT, country TEXT,
       first_seen TEXT NOT NULL, last_seen TEXT NOT NULL
