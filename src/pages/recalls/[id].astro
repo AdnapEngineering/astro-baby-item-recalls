@@ -31,7 +31,7 @@ const facts = [
   description={recall.description?.slice(0, 160) ?? `Recall details for ${recall.title}.`}
   image={recall.imageUrl}
 >
-  <main class="mx-auto max-w-3xl p-4">
+  <main id="main" tabindex="-1" class="mx-auto max-w-3xl p-4">
     <a href={withBase('/recalls/')} class="link link-primary mb-4 inline-block text-sm">
       ← All recalls
     </a>
@@ -66,7 +66,7 @@ const facts = [
             <img
               src={recall.imageUrl}
               alt={recall.imageCaption || recall.title}
-              class="mx-auto max-h-96 w-auto object-contain"
+              class="mx-auto h-auto max-h-96 max-w-full object-contain"
               loading="lazy"
               decoding="async"
             />

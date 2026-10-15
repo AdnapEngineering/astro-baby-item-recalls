@@ -2,3 +2,63 @@
 @plugin "daisyui" {
   themes: autumn --default;
 }
+
+@layer base {
+  html {
+    line-height: 1.6;
+    scroll-padding-block: 1rem;
+  }
+
+  body {
+    overflow-wrap: anywhere;
+  }
+
+  main {
+    scroll-margin-block: 1rem;
+  }
+}
+
+:where(a, button, input, select, [tabindex]):focus-visible {
+  outline: 3px solid var(--color-base-content);
+  outline-offset: 3px;
+}
+
+[hidden] {
+  display: none !important;
+}
+
+/* Override component defaults, including the low-contrast input border. */
+.input,
+.select {
+  border-color: var(--color-base-content);
+}
+
+a.badge {
+  min-height: 2rem;
+  height: auto;
+  white-space: normal;
+}
+
+.btn {
+  height: auto;
+  min-height: 2.75rem;
+  padding-block: 0.5rem;
+  white-space: normal;
+  text-align: center;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+@media (forced-colors: active) {
+  :where(a, button, input, select, [tabindex]):focus-visible {
+    outline-color: Highlight;
+  }
+}

@@ -22,7 +22,7 @@ const lastUpdated = details.reduce<string | null>(
 ---
 
 <Layout title="Baby Safety Site — check children's products for recalls">
-  <main class="mx-auto max-w-3xl p-4">
+  <main id="main" tabindex="-1" class="mx-auto max-w-3xl p-4">
     <section class="mb-10 rounded-box bg-primary/10 p-6">
       <h1 class="mb-3 text-3xl font-bold">Has your child's gear been recalled?</h1>
       <p class="mb-4">
@@ -34,15 +34,15 @@ const lastUpdated = details.reduce<string | null>(
         <label for="home-search" class="mb-1 block font-medium">
           Search by product, brand, or store
         </label>
-        <div class="join w-full">
+        <div class="flex w-full flex-col gap-2 sm:flex-row">
           <input
             id="home-search"
             name="q"
             type="search"
-            class="input join-item w-full"
+            class="input min-w-0 w-full"
             placeholder="e.g. crib, stroller, Walmart"
           />
-          <button type="submit" class="btn btn-primary join-item">Search</button>
+          <button type="submit" class="btn btn-primary">Search</button>
         </div>
       </form>
 

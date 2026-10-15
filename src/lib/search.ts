@@ -4,8 +4,7 @@ import { toRecallSummary, type RecallDetail, type RecallSummary } from './recall
 export type SearchEntry = RecallSummary & { haystack: string };
 
 export function toSearchEntry(detail: RecallDetail): SearchEntry {
-  // Product names are not stored, but CPSC titles and descriptions name the product and
-  // brand. Every entry ships to the browser inside the page, so the long prose fields are
+  // Every entry ships to the browser inside the page, so the long prose fields are
   // left out: hazard paragraphs are represented by their labels, and contact text's
   // boilerplate ("call", "email", "online") would match almost any short query anyway.
   const haystack = [

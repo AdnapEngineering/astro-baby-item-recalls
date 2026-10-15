@@ -38,7 +38,7 @@ export default function RecallListItem({
           )}
         </p>
         {recall.productIdentifiers.length > 0 && (
-          <p className="line-clamp-2 text-sm">
+          <p className="text-sm">
             <span className="font-semibold">Product:</span>{' '}
             {recall.productIdentifiers
               .map(product =>
@@ -55,7 +55,7 @@ export default function RecallListItem({
             <span className="font-semibold">Remedy:</span> {recall.remedyOptions.join(', ')}
           </p>
         )}
-        {recall.remedy && <p className="line-clamp-2 text-sm">{recall.remedy}</p>}
+        {recall.remedy && <p className="text-sm">{recall.remedy}</p>}
       </div>
     </li>
   );

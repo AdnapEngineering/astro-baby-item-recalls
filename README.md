@@ -73,6 +73,7 @@ npm run preview  # preview the built site
 npm run format   # prettier
 npm run check    # astro check — type-checks .astro, .ts, and .tsx
 npm test         # vitest unit tests; no database or network needed
+npm run test:a11y # browser accessibility checks; builds with a temporary fixture database
 ```
 
 Tests sit next to the code they cover (`*.test.ts`). The DB-facing modules are kept thin so the logic worth testing lives in pure functions; the ingest upsert is the exception, and its test runs against a throwaway SQLite file in the OS temp directory, never `DATABASE_URL`.
@@ -87,6 +88,14 @@ INGEST_DAYS=200 npm run ingest   # wider window, e.g. an initial backfill
 The ingest upserts on the CPSC `recallId`, so re-running it — at any window size — refreshes existing rows rather than duplicating them. A backfill is a one-time operation; there is no reason to run a wide window twice. Each recall's row and its hazard/remedy rows are written in one transaction, so a run that fails midway leaves every recall either fully updated or untouched. The log line reports how many recalls were new versus updated. The CPSC API intermittently fails on its side while still answering 200 OK, with a single fake recall (`RecallID` 0, title "Error retrieving Recalls: …"); it fails this way consistently on larger queries (every 30-day request on 2026-10-08, while 7–21-day ones succeeded). So the ingest requests its window in 7-day chunks, treats that error record, 5xx responses, and network errors as an outage, and retries each chunk up to five times with backoff (10 s, doubling). If any chunk still fails, the whole run fails before writing anything.
 
 `RecallID` is not a stable identity, though: CPSC has published one recall under two IDs and later reused the spare ID for an unrelated recall. After upserting, the ingest removes stored recalls that CPSC has withdrawn (dated inside the fetched window, ID no longer returned) or reassigned (ID returned with a different recall number), and logs their IDs. It skips the cleanup — with a warning on the Actions run — if CPSC returned nothing or more than 10 rows would go. As a backstop, the build shows only one row per recall number, so a duplicate never reaches the page even before the ingest removes it.
+
+## Accessibility
+
+The site targets WCAG 2.2 AA: keyboard-visible focus, a skip link to the main landmark, labeled search controls with a polite result-count status, responsive layouts, reduced-motion and forced-color support, and readable content without JavaScript. Product identifiers and remedy text are not visually truncated.
+
+Run `npx playwright install chromium` once before `npm run test:a11y`. The browser suite builds representative pages with a disposable SQLite database, never production credentials. It checks axe WCAG A/AA rules and best practices at desktop and 320 CSS pixels, keyboard skip navigation and filtering, text-spacing reflow, no-JavaScript fallback, and focus in forced-color/reduced-motion mode. Deployment runs these checks before building with Turso data.
+
+Automated checks do not establish WCAG conformance. Before releases, manually check NVDA/Firefox and VoiceOver/Safari reading order and result announcements, keyboard focus visibility and lack of traps, 200% text zoom and 400% browser zoom without clipped content, and the accuracy of CPSC-supplied photo descriptions. API content and untested browser/assistive-technology combinations can still introduce accessibility barriers.
 
 ## Deployment
 
