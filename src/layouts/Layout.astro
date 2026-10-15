@@ -43,12 +43,12 @@ const canonical = new URL(Astro.url.pathname, Astro.site ?? Astro.url).href;
   <body class="flex min-h-screen flex-col">
     <a
       href="#main"
-      class="btn btn-primary btn-sm sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50"
+      class="btn btn-primary sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50"
     >
       Skip to main content
     </a>
     <Header />
-    <div id="main" tabindex="-1" class="flex-1 focus:outline-none">
+    <div class="min-w-0 flex-1">
       <slot />
     </div>
     <Footer />

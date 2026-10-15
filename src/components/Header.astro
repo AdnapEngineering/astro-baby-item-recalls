@@ -6,14 +6,16 @@ import { isActive, navLinks, withBase } from '../lib/nav';
 const { pathname } = Astro.url;
 ---
 
-<header class="navbar bg-base-100 shadow-sm">
-  <div class="navbar-start">
+<header
+  class="flex flex-col items-center gap-2 bg-base-100 p-3 shadow-sm sm:flex-row sm:justify-between"
+>
+  <div>
     <a href={withBase('/')} class="btn btn-ghost text-lg font-bold text-primary"> Baby Safety </a>
   </div>
 
-  <nav class="navbar-end" aria-label="Main">
+  <nav aria-label="Main">
     {/* Wraps rather than overflowing the viewport on narrow phones. */}
-    <ul class="menu menu-horizontal flex-wrap justify-end gap-1 px-1">
+    <ul class="menu menu-horizontal flex-wrap justify-center gap-1 px-1">
       {
         navLinks.map(link => {
           const active = isActive(pathname, link.href);
@@ -21,7 +23,7 @@ const { pathname } = Astro.url;
             <li>
               <a
                 href={link.href}
-                class:list={['font-medium', { 'menu-active': active }]}
+                class:list={['min-h-11 font-medium', { 'menu-active underline': active }]}
                 aria-current={active ? 'page' : undefined}
               >
                 {link.label}

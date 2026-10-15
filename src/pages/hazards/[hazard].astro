@@ -19,7 +19,7 @@ const count = group.recalls.length;
   title={`${group.name} — Baby Safety Site`}
   description={`Children's product recalls that pose a ${group.name.toLowerCase()} hazard.`}
 >
-  <main class="mx-auto max-w-3xl p-4">
+  <main id="main" tabindex="-1" class="mx-auto max-w-3xl p-4">
     <a href={withBase('/hazards/')} class="link link-primary mb-4 inline-block text-sm">
       ← All hazards
     </a>

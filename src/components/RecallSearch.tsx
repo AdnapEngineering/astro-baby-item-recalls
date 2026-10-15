@@ -12,6 +12,7 @@ interface Props {
 export default function RecallSearch({ entries, hazards }: Props) {
   const [query, setQuery] = useState('');
   const [hazard, setHazard] = useState('');
+  const [ready, setReady] = useState(false);
 
   // ?q= and ?hazard= let a search be bookmarked or shared, and let the home page's search
   // box hand off to this page. Read after hydration rather than in useState's initializer:
@@ -21,6 +22,7 @@ export default function RecallSearch({ entries, hazards }: Props) {
     setQuery(params.get('q') ?? '');
     const fromUrl = params.get('hazard');
     if (fromUrl && hazards.some(h => h.slug === fromUrl)) setHazard(fromUrl);
+    setReady(true);
   }, []);
 
   // replaceState, not pushState: an entry per keystroke would make Back unusable.
@@ -44,19 +46,23 @@ export default function RecallSearch({ entries, hazards }: Props) {
     () => filterRecalls(entries, deferredQuery, hazard || null),
     [entries, deferredQuery, hazard]
   );
-  const filtered = query.trim() !== '' || hazard !== '';
+  const filtered = deferredQuery.trim() !== '' || hazard !== '';
 
   return (
     <div>
       <form
         role="search"
+        hidden={!ready}
         className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-end"
+        aria-label="Filter recalls"
+        aria-describedby="search-help"
         onSubmit={e => e.preventDefault()}
       >
-        <label className="flex-1">
+        <label className="min-w-0 flex-1">
           <span className="mb-1 block font-medium">Search by product, brand, or store</span>
           <input
             type="search"
+            aria-controls="recall-results"
             className="input w-full"
             placeholder="e.g. crib, stroller, Walmart"
             value={query}
@@ -66,6 +72,7 @@ export default function RecallSearch({ entries, hazards }: Props) {
         <label>
           <span className="mb-1 block font-medium">Hazard</span>
           <select
+            aria-controls="recall-results"
             className="select w-full sm:w-auto"
             value={hazard}
             onChange={e => update(query, e.target.value)}
@@ -80,35 +87,47 @@ export default function RecallSearch({ entries, hazards }: Props) {
         </label>
       </form>
 
-      <p className="mb-4 text-sm text-base-content/70" aria-live="polite">
+      <p id="search-help" hidden={!ready} className="mb-3 text-sm">
+        Results update as you type or choose a hazard.
+      </p>
+      <noscript>
+        <p className="mb-4">
+          Filtering requires JavaScript. All collected recalls are listed below; use your browser's
+          Find command to search this page.
+        </p>
+      </noscript>
+
+      <p className="mb-4 text-sm text-base-content/70" role="status" aria-atomic="true">
         {filtered
           ? `${results.length} of ${entries.length} recalls match.`
           : `${entries.length} recalls, newest first.`}
       </p>
 
-      {results.length === 0 ? (
-        <div className="alert">
-          <span>
-            No stored recalls match. Try fewer or different words — and remember this list only
-            covers children's products the site has collected, so also check{' '}
-            <a
-              href="https://www.cpsc.gov/Recalls"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="link link-primary"
-            >
-              cpsc.gov<span className="sr-only"> (opens in a new tab)</span>
-            </a>
-            .
-          </span>
-        </div>
-      ) : (
-        <ul className="space-y-3">
-          {results.map(recall => (
-            <RecallListItem key={recall.recallId} recall={recall} />
-          ))}
-        </ul>
-      )}
+      <div id="recall-results" aria-busy={query !== deferredQuery}>
+        {results.length === 0 ? (
+          <div className="alert">
+            <span>
+              No stored recalls match. Try fewer or different words — and remember this list only
+              covers children's products the site has collected, so also check{' '}
+              <a
+                href="https://www.cpsc.gov/Recalls"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="link link-primary"
+              >
+                cpsc.gov<span className="sr-only"> (opens in a new tab)</span>
+              </a>
+              .
+            </span>
+          </div>
+        ) : (
+          <ul className="space-y-3">
+            {results.map(recall => (
+              <RecallListItem key={recall.recallId} recall={recall} />
+            ))}
+          </ul>
+        )}
+      </div>
     </div>
   );
 }

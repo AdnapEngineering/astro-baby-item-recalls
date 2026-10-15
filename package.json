@@ -10,7 +10,8 @@
     "build": "astro build",
     "preview": "astro preview",
     "check": "astro check",
-    "test": "vitest run",
+    "test": "vitest run src scripts",
+    "test:a11y": "playwright test",
     "astro": "astro",
     "format": "prettier . --write",
     "format:check": "prettier . --check",
@@ -29,6 +30,8 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.10.2",
+    "@playwright/test": "^1.56.0",
     "@astrojs/check": "^0.9.10",
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
