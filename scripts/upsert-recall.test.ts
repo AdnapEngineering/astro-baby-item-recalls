@@ -22,7 +22,13 @@ const item: RecallItem = {
   Products: [{ Name: 'Acme Convertible Crib', Model: 'AC-123' }, { Name: 'Acme Crib Mattress' }],
   Hazards: [{ Name: 'Entrapment hazard' }],
   RemedyOptions: [{ Option: 'Refund' }],
-  Images: [{ URL: 'https://example.com/crib.jpg', Caption: 'Recalled crib' }],
+  Images: [
+    { URL: 'https://example.com/crib.jpg', Caption: 'Recalled crib' },
+    { URL: 'https://example.com/label.jpg' },
+  ],
+  Manufacturers: [{ Name: 'Acme Co., of China' }],
+  Importers: [{ Name: ' Acme USA, of Ohio ' }, { Name: null }],
+  Distributors: [{ Name: 'Acme USA, of Ohio' }],
 };
 
 describe('upsertRecall', () => {
@@ -32,7 +38,14 @@ describe('upsertRecall', () => {
     const [row] = await db.select().from(recalls);
     expect(row).toMatchObject({
       title: 'Acme Recalls Cribs',
+      imageUrl: 'https://example.com/crib.jpg',
       imageCaption: 'Recalled crib',
+      images: [
+        { url: 'https://example.com/crib.jpg', caption: 'Recalled crib' },
+        { url: 'https://example.com/label.jpg', caption: null },
+      ],
+      // Trimmed, null skipped, and the importer that is also the distributor listed once.
+      companyNames: ['Acme Co., of China', 'Acme USA, of Ohio'],
       productIdentifiers: [
         { name: 'Acme Convertible Crib', model: 'AC-123' },
         { name: 'Acme Crib Mattress', model: null },

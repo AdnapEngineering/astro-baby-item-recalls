@@ -9,6 +9,8 @@ const RecallProductSchema = z.object({
   NumberOfUnits: z.string().optional(),
 });
 const OrganizationSchema = z.object({ Name: z.string() });
+// Used only as search text, so a missing or null name is skipped rather than failing the run.
+const CompanySchema = z.object({ Name: z.string().nullish() });
 const HazardSchema = z.object({ Name: z.string().optional() });
 const ImageSchema = z.object({ URL: z.string(), Caption: z.string().optional() });
 const RemedySchema = z.object({ Name: z.string().optional() });
@@ -27,6 +29,9 @@ export const RecallItemSchema = z.object({
   ConsumerContact: z.string().optional(),
   Products: z.array(RecallProductSchema).optional(),
   Retailers: z.array(OrganizationSchema).optional(),
+  Manufacturers: z.array(CompanySchema).optional(),
+  Importers: z.array(CompanySchema).optional(),
+  Distributors: z.array(CompanySchema).optional(),
   Hazards: z.array(HazardSchema).optional(),
   Images: z.array(ImageSchema).optional(),
   Remedies: z.array(RemedySchema).optional(),

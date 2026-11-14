@@ -2,6 +2,7 @@ import { sqliteTable, integer, text, index } from 'drizzle-orm/sqlite-core';
 import { sql } from 'drizzle-orm';
 
 export type ProductIdentifier = { name: string | null; model: string | null };
+export type RecallImage = { url: string; caption: string | null };
 
 export const recalls = sqliteTable('recalls', {
   recallId: integer('recall_id').primaryKey(),
@@ -15,10 +16,23 @@ export const recalls = sqliteTable('recalls', {
   recallDate: text('recall_date').notNull(), // CPSC's timestamp, e.g. "2026-07-30T00:00:00"
   lastPublishDate: text('last_publish_date'), // CPSC's own change marker
   url: text('url'),
-  // Only the first CPSC image — recalls carry 2-10 (front/side/back views), but the first
-  // is the hero shot and the rest are detail the list view has no room for.
+  // The first CPSC image: the hero shot, and the only one the list views have room for.
   imageUrl: text('image_url'),
   imageCaption: text('image_caption'),
+  // Every CPSC image in API order, the first included — recalls carry up to ten (label,
+  // packaging, side and back views), which is what a parent matches against their own item.
+  // Empty on rows last ingested before this column existed; fall back to imageUrl there.
+  images: text('images', { mode: 'json' })
+    .$type<RecallImage[]>()
+    .notNull()
+    .default(sql`'[]'`),
+  // Manufacturer, importer and distributor names, deduplicated. Kept for search only: the
+  // values are legal-notice prose ("X, Inc., doing business as X, of Chicago, Illinois"),
+  // useful to match a brand against but not fit to display.
+  companyNames: text('company_names', { mode: 'json' })
+    .$type<string[]>()
+    .notNull()
+    .default(sql`'[]'`),
   consumerContact: text('consumer_contact'),
   remedy: text('remedy'),
   injuries: text('injuries'), // prose, often "None reported" — not a count

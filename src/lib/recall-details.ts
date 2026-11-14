@@ -1,4 +1,10 @@
-import type { HazardRow, ProductIdentifier, RecallRow, RemedyOptionRow } from '../db/schema';
+import type {
+  HazardRow,
+  ProductIdentifier,
+  RecallImage,
+  RecallRow,
+  RemedyOptionRow,
+} from '../db/schema';
 import { formatRecallDate } from './format';
 import { hazardLabel } from './recalls';
 
@@ -81,6 +87,17 @@ export function assembleRecallDetails(
   return [...details.values()].sort(
     (a, b) => b.recallDate.localeCompare(a.recallDate) || b.recallId - a.recallId
   );
+}
+
+/**
+ * Every photo to show for a recall, hero first. Rows last ingested before the `images`
+ * column existed have an empty list, so those fall back to the single stored hero image.
+ */
+export function recallImages(
+  recall: Pick<RecallRow, 'images' | 'imageUrl' | 'imageCaption'>
+): RecallImage[] {
+  if (recall.images.length) return recall.images;
+  return recall.imageUrl ? [{ url: recall.imageUrl, caption: recall.imageCaption }] : [];
 }
 
 /** What a list row needs: enough to recognise a product and see the remedy at a glance. */

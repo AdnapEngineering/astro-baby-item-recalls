@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import type { RecallRow } from '../db/schema';
-import { assembleRecallDetails, dropDuplicateRecalls, toRecallSummary } from './recall-details';
+import {
+  assembleRecallDetails,
+  dropDuplicateRecalls,
+  recallImages,
+  toRecallSummary,
+} from './recall-details';
 import { filterRecalls, toSearchEntry } from './search';
 
 function recallRow(recallId: number, overrides: Partial<RecallRow> = {}): RecallRow {
@@ -15,6 +20,8 @@ function recallRow(recallId: number, overrides: Partial<RecallRow> = {}): Recall
     url: null,
     imageUrl: null,
     imageCaption: null,
+    images: [],
+    companyNames: [],
     consumerContact: null,
     remedy: null,
     injuries: null,
@@ -162,5 +169,42 @@ describe('assembleRecallDetails with duplicates', () => {
     );
     expect(details).toHaveLength(1);
     expect(details[0]).toMatchObject({ recallId: 10, hazardTags: [], remedyOptions: [] });
+  });
+});
+
+describe('recallImages', () => {
+  it('returns every stored image, hero first', () => {
+    const images = [
+      { url: 'https://example.com/front.jpg', caption: 'Front' },
+      { url: 'https://example.com/label.jpg', caption: null },
+    ];
+    expect(
+      recallImages(recallRow(1, { images, imageUrl: images[0].url, imageCaption: 'Front' }))
+    ).toEqual(images);
+  });
+
+  it('falls back to the hero image on a row ingested before images were stored', () => {
+    expect(
+      recallImages(recallRow(1, { imageUrl: 'https://example.com/a.jpg', imageCaption: 'A' }))
+    ).toEqual([{ url: 'https://example.com/a.jpg', caption: 'A' }]);
+  });
+
+  it('returns nothing for a recall with no image at all', () => {
+    expect(recallImages(recallRow(1))).toEqual([]);
+  });
+});
+
+describe('company names in search', () => {
+  it('finds a recall by an importer named only in companyNames', () => {
+    const details = assembleRecallDetails(
+      [
+        recallRow(1, { title: 'Bed Rails Recalled', companyNames: ['Papablic, Inc., of Chicago'] }),
+        recallRow(2, { title: 'Strollers Recalled' }),
+      ],
+      [],
+      []
+    );
+    const found = filterRecalls(details.map(toSearchEntry), 'papablic');
+    expect(found.map(entry => entry.recallId)).toEqual([1]);
   });
 });

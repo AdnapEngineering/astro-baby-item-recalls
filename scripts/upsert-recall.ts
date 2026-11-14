@@ -20,6 +20,12 @@ export async function upsertRecall(
   item: RecallItem,
   now: string
 ): Promise<'inserted' | 'updated'> {
+  const companyNames = [
+    ...(item.Manufacturers ?? []),
+    ...(item.Importers ?? []),
+    ...(item.Distributors ?? []),
+  ].flatMap(({ Name }) => (Name?.trim() ? [Name.trim()] : []));
+
   // Everything except the identity and firstSeen — shared between the insert and the
   // update branch so the two can't drift apart. Each of these is 1-per-recall in the
   // API, so the [0] reads drop extras rather than crash if that ever changes.
@@ -38,6 +44,12 @@ export async function upsertRecall(
     url: item.URL ?? null,
     imageUrl: item.Images?.[0]?.URL ?? null,
     imageCaption: item.Images?.[0]?.Caption ?? null,
+    images: (item.Images ?? []).map(image => ({
+      url: image.URL,
+      caption: image.Caption?.trim() || null,
+    })),
+    // One company is often both importer and distributor.
+    companyNames: [...new Set(companyNames)],
     consumerContact: item.ConsumerContact ?? null,
     remedy: item.Remedies?.[0]?.Name ?? null,
     injuries: item.Injuries?.[0]?.Name ?? null,
