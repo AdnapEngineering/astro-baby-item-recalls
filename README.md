@@ -19,7 +19,7 @@ Hazard categories are derived the same way, from the hazard paragraph, using the
 ## Features
 
 - **_Searchable list:_** `/recalls/` lists every stored recall, newest first, with a keyword and hazard filter that runs in the browser over build-time data. The keyword search also matches manufacturer, importer, and distributor names, which often carry a brand the title leaves out. Filters sync to `?q=` and `?hazard=`, so a search can be shared, and the home page's search box hands off to it.
-- **_Recall detail pages:_** `/recalls/<id>/` shows everything stored for a recall — every CPSC photo, product names and model numbers, hazards, remedy and remedy options, injuries, units, where sold, contact info, and the official CPSC link.
+- **_Recall detail pages:_** `/recalls/<id>/` shows everything stored for a recall — every CPSC photo in a slider, product names and model numbers, hazards, remedy and remedy options, injuries, units, where sold, contact info, and the official CPSC link.
 - **_Hazard browsing:_** Recalls are tagged by hazard type with a page per hazard, each row showing a thumbnail and the remedy.
 - **_Latest recalls:_** The home page shows the newest stored recalls and when the data was last updated.
 - **_Responsive design:_** Built with modern web standards for a good experience across devices.

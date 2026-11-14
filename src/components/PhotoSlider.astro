@@ -1,0 +1,124 @@
+---
+import type { RecallImage } from '../db/schema';
+
+interface Props {
+  photos: RecallImage[];
+  /** Used as the alt text of a photo CPSC published without a caption. */
+  title: string;
+}
+
+const { photos, title } = Astro.props;
+const many = photos.length > 1;
+---
+
+{
+  photos.length > 0 && (
+    <section
+      class="mb-6"
+      aria-label="Product photos"
+      aria-roledescription={many ? 'carousel' : undefined}
+      data-photo-slider
+    >
+      {/* A scroll-snap track: it swipes and scrolls on its own, so every photo stays
+          reachable without JavaScript. The script below only adds the buttons and counter.
+          Focusable because a scrollable region must be operable from the keyboard. */}
+      <div
+        class="photo-track flex snap-x snap-mandatory overflow-x-auto rounded-box bg-base-200"
+        tabindex={many ? 0 : undefined}
+        role={many ? 'group' : undefined}
+        aria-label={many ? `${photos.length} photos; scroll sideways to see each` : undefined}
+        data-track
+      >
+        {photos.map((photo, index) => (
+          <figure class="w-full shrink-0 snap-center p-4" data-slide>
+            <img
+              src={photo.url}
+              alt={photo.caption || (many ? `${title} — photo ${index + 1}` : title)}
+              class="mx-auto h-72 max-w-full object-contain sm:h-96"
+              loading="lazy"
+              decoding="async"
+            />
+            {photo.caption && (
+              <figcaption class="mt-2 text-center text-sm text-base-content/70">
+                {photo.caption}
+              </figcaption>
+            )}
+          </figure>
+        ))}
+      </div>
+
+      {many && (
+        <div class="mt-2 flex items-center justify-between gap-2" data-controls hidden>
+          <button type="button" class="btn btn-sm" data-prev>
+            <span aria-hidden="true">←</span> Previous<span class="sr-only"> photo</span>
+          </button>
+          <p class="text-sm" aria-live="polite" data-counter>
+            Photo 1 of {photos.length}
+          </p>
+          <button type="button" class="btn btn-sm" data-next>
+            Next<span class="sr-only"> photo</span> <span aria-hidden="true">→</span>
+          </button>
+        </div>
+      )}
+      {many && (
+        <noscript>
+          <p class="mt-2 text-center text-sm">
+            {photos.length} photos — scroll sideways to see each.
+          </p>
+        </noscript>
+      )}
+    </section>
+  )
+}
+
+<style>
+  .photo-track {
+    scroll-behavior: smooth;
+  }
+  button[aria-disabled='true'] {
+    cursor: default;
+    opacity: 0.5;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .photo-track {
+      scroll-behavior: auto;
+    }
+  }
+</style>
+
+<script>
+  for (const slider of document.querySelectorAll<HTMLElement>('[data-photo-slider]')) {
+    const track = slider.querySelector<HTMLElement>('[data-track]');
+    const controls = slider.querySelector<HTMLElement>('[data-controls]');
+    const prev = slider.querySelector<HTMLButtonElement>('[data-prev]');
+    const next = slider.querySelector<HTMLButtonElement>('[data-next]');
+    const counter = slider.querySelector<HTMLElement>('[data-counter]');
+    if (!track || !controls || !prev || !next || !counter) continue;
+
+    const count = track.querySelectorAll('[data-slide]').length;
+    const current = () => Math.round(track.scrollLeft / track.clientWidth);
+    let shown = -1;
+
+    const update = () => {
+      const index = Math.min(count - 1, Math.max(0, current()));
+      if (index === shown) return;
+      shown = index;
+      counter.textContent = `Photo ${index + 1} of ${count}`;
+      // aria-disabled, not disabled: a disabled button would drop keyboard focus when
+      // the last photo is reached.
+      prev.setAttribute('aria-disabled', String(index === 0));
+      next.setAttribute('aria-disabled', String(index === count - 1));
+    };
+
+    const go = (step: number) => {
+      const index = Math.min(count - 1, Math.max(0, current() + step));
+      track.scrollTo({ left: index * track.clientWidth });
+    };
+
+    prev.addEventListener('click', () => go(-1));
+    next.addEventListener('click', () => go(1));
+    track.addEventListener('scroll', () => requestAnimationFrame(update), { passive: true });
+    controls.hidden = false;
+    update();
+  }
+</script>
