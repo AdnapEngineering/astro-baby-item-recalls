@@ -20,14 +20,17 @@ export function groupByHazard<R extends GroupableRecall>(
   const groups = new Map<string, HazardGroup<R>>();
   for (const { tag, ...rest } of rows) {
     const recall = rest as unknown as R;
-    const group = groups.get(tag) ?? { slug: tag, name: hazardLabel(tag), recalls: [] };
+    let group = groups.get(tag);
+    if (!group) {
+      group = { slug: tag, name: hazardLabel(tag), recalls: [] };
+      groups.set(tag, group);
+    }
     // One recall can carry several hazard paragraphs that reduce to the same tag (two
     // different fire descriptions, say). Count it once, or it renders twice and inflates
     // the badge. The reverse is intended: a recall belongs to every tag it matches.
     if (!group.recalls.some(r => r.recallId === recall.recallId)) {
       group.recalls.push(recall);
     }
-    groups.set(tag, group);
   }
 
   // recallDate is an ISO string, so a string compare is already chronological.

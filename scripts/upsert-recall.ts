@@ -60,9 +60,9 @@ export async function upsertRecall(
     db.delete(hazards).where(eq(hazards.recallId, item.RecallID)),
     db.delete(remedyOptions).where(eq(remedyOptions.recallId, item.RecallID)),
   ];
-  const hazardRows = (item.Hazards ?? [])
-    .filter(h => h.Name)
-    .map(h => ({ recallId: item.RecallID, name: h.Name!, tag: hazardTag(h.Name!) }));
+  const hazardRows = (item.Hazards ?? []).flatMap(({ Name }) =>
+    Name ? [{ recallId: item.RecallID, name: Name, tag: hazardTag(Name) }] : []
+  );
   if (hazardRows.length) childWrites.push(db.insert(hazards).values(hazardRows));
   const optionRows = (item.RemedyOptions ?? []).map(o => ({
     recallId: item.RecallID,

@@ -76,11 +76,16 @@ export class CpscUnavailableError extends Error {
 // than a contract change.
 function cpscErrorTitle(json: unknown): string | null {
   if (!Array.isArray(json)) return null;
-  const error = json.find(
-    (r: { RecallID?: unknown; Title?: unknown }) =>
-      r?.RecallID === 0 && typeof r.Title === 'string' && r.Title.startsWith('Error retrieving')
-  );
-  return error ? (error.Title as string) : null;
+  for (const record of json as { RecallID?: unknown; Title?: unknown }[]) {
+    if (
+      record?.RecallID === 0 &&
+      typeof record.Title === 'string' &&
+      record.Title.startsWith('Error retrieving')
+    ) {
+      return record.Title;
+    }
+  }
+  return null;
 }
 
 /**
@@ -104,8 +109,10 @@ export type RecallWindow = { start: string; end: string };
 
 /** The window covering the last `days` days, ending today. */
 export function recallWindow(days: number, today = new Date()): RecallWindow {
+  // UTC throughout, matching isoDate() and splitWindow(): local-time arithmetic here would
+  // let a DST change on the host shift the start by a day.
   const start = new Date(today);
-  start.setDate(today.getDate() - days);
+  start.setUTCDate(today.getUTCDate() - days);
   return { start: isoDate(start), end: isoDate(today) };
 }
 

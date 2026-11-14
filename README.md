@@ -42,9 +42,12 @@ The CPSC API has no usable product category field, so children's products are id
 | `src/lib/recalls.ts`        | CPSC API parsing, child-product matching, and the hazard tag/label/pattern table  |
 | `src/lib/recall-data.ts`    | The build-time DB load every page shares (memoised per build)                     |
 | `src/lib/recall-details.ts` | Pure reshaping of DB rows into page data; `hazard-groups.ts` and `search.ts` too  |
+| `src/db/migrations/`        | Hand-written SQL migrations, applied manually to an existing database             |
 | `scripts/ingest.ts`         | The ingest job — fetches CPSC recalls and upserts into Turso                      |
+| `scripts/fetch-recalls.ts`  | Fetches the window in 7-day chunks, retrying CPSC outages with backoff            |
 | `scripts/upsert-recall.ts`  | One recall's writes, as a single atomic `db.batch`                                |
 | `scripts/remove-stale.ts`   | Removes recalls CPSC has withdrawn or whose RecallID it reused for another recall |
+| `e2e/`                      | Playwright + axe accessibility checks, run against a fixture database             |
 | `drizzle.config.ts`         | Drizzle Kit config for generating/applying migrations                             |
 
 ## Local development
@@ -112,7 +115,7 @@ Manual runs take a `days` input (default `200`) that becomes `INGEST_DAYS`. Sche
 
 ### `Deploy Astro site to GitHub Pages` — [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml)
 
-Type-checks, runs the unit tests, then builds and publishes. Triggered by pushes to `main`, manual dispatch, and — via `workflow_run` — the completion of `Ingest recalls`. That last trigger is what gets fresh data onto the site: the build reads Turso, so ingested rows are invisible until a rebuild.
+Type-checks, runs the unit tests and the accessibility checks, then builds and publishes. Triggered by pushes to `main`, manual dispatch, and — via `workflow_run` — the completion of `Ingest recalls`. That last trigger is what gets fresh data onto the site: the build reads Turso, so ingested rows are invisible until a rebuild.
 
 A few things about this workflow that are easy to trip over:
 
