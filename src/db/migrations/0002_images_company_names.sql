@@ -1,0 +1,2 @@
+ALTER TABLE recalls ADD COLUMN images TEXT NOT NULL DEFAULT '[]';
+ALTER TABLE recalls ADD COLUMN company_names TEXT NOT NULL DEFAULT '[]';

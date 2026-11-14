@@ -7,11 +7,13 @@ export function toSearchEntry(detail: RecallDetail): SearchEntry {
   // Every entry ships to the browser inside the page, so the long prose fields are
   // left out: hazard paragraphs are represented by their labels, and contact text's
   // boilerplate ("call", "email", "online") would match almost any short query anyway.
+  // Company names are in: a brand is often named only as the importer, not in the title.
   const haystack = [
     detail.title,
     detail.description,
     ...detail.productIdentifiers.flatMap(product => [product.name, product.model]),
     detail.soldAt,
+    ...detail.companyNames,
     detail.recallNumber,
     ...detail.hazardTags.map(tag => tag.label),
   ]

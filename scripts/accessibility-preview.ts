@@ -18,11 +18,19 @@ try {
       Hazards: [{ Name: 'Children can become trapped, posing an entrapment hazard.' }],
       RemedyOptions: [{ Option: 'Refund' }],
       Remedies: [{ Name: 'Stop using the crib and contact Acme for a refund.' }],
+      Importers: [{ Name: 'Acme Imports, Inc., of Springfield, Ohio' }],
       ConsumerContact: `Contact Acme at https://example.com/${'contact'.repeat(30)}`,
       Images: [
         {
           URL: 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="800" height="600"%3E%3Crect width="800" height="600" fill="gray"/%3E%3C/svg%3E',
           Caption: 'Front view of the recalled crib',
+        },
+        {
+          URL: 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="600" height="800"%3E%3Crect width="600" height="800" fill="silver"/%3E%3C/svg%3E',
+          Caption: 'Label on the crib headboard showing the model number',
+        },
+        {
+          URL: 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="800" height="400"%3E%3Crect width="800" height="400" fill="gray"/%3E%3C/svg%3E',
         },
       ],
     },
