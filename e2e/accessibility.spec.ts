@@ -76,6 +76,46 @@ test('search is keyboard operable and announces results without moving focus', a
   await expect(page.getByRole('combobox')).toBeFocused();
 });
 
+test('photo slider moves between photos by button and keeps focus at the ends', async ({
+  page,
+}) => {
+  await page.goto('recalls/1/');
+  const slider = page.getByRole('region', { name: 'Product photos' });
+  const counter = slider.locator('[data-counter]');
+  const next = slider.getByRole('button', { name: 'Next photo' });
+  const previous = slider.getByRole('button', { name: 'Previous photo' });
+  await expect(counter).toHaveText('Photo 1 of 3');
+  await expect(previous).toHaveAttribute('aria-disabled', 'true');
+
+  await next.focus();
+  await page.keyboard.press('Enter');
+  await expect(counter).toHaveText('Photo 2 of 3');
+  await expect(slider.getByRole('img').nth(1)).toBeInViewport();
+  await page.keyboard.press('Enter');
+  await expect(counter).toHaveText('Photo 3 of 3');
+  await expect(next).toHaveAttribute('aria-disabled', 'true');
+  await expect(next).toBeFocused();
+
+  await previous.click();
+  await expect(counter).toHaveText('Photo 2 of 3');
+  expect((await new AxeBuilder({ page }).withTags(tags).analyze()).violations).toEqual([]);
+});
+
+test('without JavaScript every photo is still in the page and no dead buttons appear', async ({
+  browser,
+}) => {
+  const context = await browser.newContext({ javaScriptEnabled: false });
+  const page = await context.newPage();
+  try {
+    await page.goto('http://127.0.0.1:4322/astro-baby-item-recalls/recalls/1/');
+    const slider = page.getByRole('region', { name: 'Product photos' });
+    await expect(slider.getByRole('img')).toHaveCount(3);
+    await expect(slider.getByRole('button')).toHaveCount(0);
+  } finally {
+    await context.close();
+  }
+});
+
 test('without JavaScript all recalls remain readable and no nonfunctional filters appear', async ({
   browser,
 }) => {

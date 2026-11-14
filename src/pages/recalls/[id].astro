@@ -1,4 +1,5 @@
 ---
+import PhotoSlider from '../../components/PhotoSlider.astro';
 import Layout from '../../layouts/Layout.astro';
 import { formatRecallDate } from '../../lib/format';
 import { withBase } from '../../lib/nav';
@@ -14,7 +15,7 @@ export async function getStaticPaths() {
 
 const { recall } = Astro.props as { recall: RecallDetail };
 const officialUrl = recall.url ?? 'https://www.cpsc.gov/Recalls';
-const [heroImage, ...morePhotos] = recallImages(recall);
+const photos = recallImages(recall);
 
 // Only the facts CPSC actually supplied; an empty row reads like "unknown" when it
 // usually means "not applicable".
@@ -30,7 +31,7 @@ const facts = [
 <Layout
   title={`${recall.title} — Baby Safety Site`}
   description={recall.description?.slice(0, 160) ?? `Recall details for ${recall.title}.`}
-  image={heroImage?.url}
+  image={photos[0]?.url}
 >
   <main id="main" tabindex="-1" class="mx-auto max-w-3xl p-4">
     <a href={withBase('/recalls/')} class="link link-primary mb-4 inline-block text-sm">
@@ -61,52 +62,7 @@ const facts = [
         }
       </header>
 
-      {
-        heroImage && (
-          <figure class="mb-6 rounded-box bg-base-200 p-4">
-            <img
-              src={heroImage.url}
-              alt={heroImage.caption || recall.title}
-              class="mx-auto h-auto max-h-96 max-w-full object-contain"
-              loading="lazy"
-              decoding="async"
-            />
-            {heroImage.caption && (
-              <figcaption class="mt-2 text-center text-sm text-base-content/70">
-                {heroImage.caption}
-              </figcaption>
-            )}
-          </figure>
-        )
-      }
-
-      {
-        morePhotos.length > 0 && (
-          <section class="mb-6">
-            <h2 class="mb-2 text-xl font-semibold">More photos</h2>
-            {/* A plain grid, not a list: inside a list item axe reports the caption as
-                redundant with the alt text, and each figure already stands on its own. */}
-            <div class="grid gap-3 sm:grid-cols-2">
-              {morePhotos.map((photo, index) => (
-                <figure class="rounded-box bg-base-200 p-3">
-                  <img
-                    src={photo.url}
-                    alt={photo.caption || `${recall.title} — photo ${index + 2}`}
-                    class="mx-auto h-auto max-h-64 max-w-full object-contain"
-                    loading="lazy"
-                    decoding="async"
-                  />
-                  {photo.caption && (
-                    <figcaption class="mt-2 text-center text-sm text-base-content/70">
-                      {photo.caption}
-                    </figcaption>
-                  )}
-                </figure>
-              ))}
-            </div>
-          </section>
-        )
-      }
+      <PhotoSlider photos={photos} title={recall.title} />
 
       {recall.description && <p class="mb-6">{recall.description}</p>}
 
