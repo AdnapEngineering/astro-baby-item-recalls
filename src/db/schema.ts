@@ -12,7 +12,7 @@ export const recalls = sqliteTable('recalls', {
     .$type<ProductIdentifier[]>()
     .notNull()
     .default(sql`'[]'`),
-  recallDate: text('recall_date').notNull(), //ISO string
+  recallDate: text('recall_date').notNull(), // CPSC's timestamp, e.g. "2026-07-30T00:00:00"
   lastPublishDate: text('last_publish_date'), // CPSC's own change marker
   url: text('url'),
   // Only the first CPSC image — recalls carry 2-10 (front/side/back views), but the first
