@@ -14,6 +14,8 @@ CPSC API  ──ingest──▶  Turso  ──astro build──▶  static site 
 
 The CPSC API has no usable product category field, so children's products are identified by keyword matching against the recall title, description, product names, and hazard text. That term list lives in [`src/lib/recalls.ts`](src/lib/recalls.ts) and is the main knob for tuning what the site shows.
 
+Hazard categories are derived the same way, from the hazard paragraph, using the `HAZARD_TAGS` table in that file. Both are applied at ingest, so after changing either list, run a wide ingest once (for example `gh workflow run "Ingest recalls" -f days=200`) so recalls already stored are re-filtered and re-tagged.
+
 ## Features
 
 - **_Searchable list:_** `/recalls/` lists every stored recall, newest first, with a keyword and hazard filter that runs in the browser over build-time data. Filters sync to `?q=` and `?hazard=`, so a search can be shared, and the home page's search box hands off to it.
@@ -79,7 +81,7 @@ npm test         # vitest unit tests; no database or network needed
 npm run test:a11y # browser accessibility checks; builds with a temporary fixture database
 ```
 
-Tests sit next to the code they cover (`*.test.ts`). The DB-facing modules are kept thin so the logic worth testing lives in pure functions; the ingest upsert is the exception, and its test runs against a throwaway SQLite file in the OS temp directory, never `DATABASE_URL`.
+Tests sit next to the code they cover (`*.test.ts`). The DB-facing modules are kept thin so the logic worth testing lives in pure functions; the ingest upsert is the exception, and its test runs against a throwaway SQLite file in the OS temp directory, never `DATABASE_URL`. That file's tables are generated from `src/db/schema.ts`, so the tests always run against the current schema.
 
 Populate the database:
 
@@ -115,17 +117,21 @@ Manual runs take a `days` input (default `200`) that becomes `INGEST_DAYS`. Sche
 
 ### `Deploy Astro site to GitHub Pages` — [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml)
 
-Type-checks, runs the unit tests and the accessibility checks, then builds and publishes. Triggered by pushes to `main`, manual dispatch, and — via `workflow_run` — the completion of `Ingest recalls`. That last trigger is what gets fresh data onto the site: the build reads Turso, so ingested rows are invisible until a rebuild.
+Runs the checks below, then builds and publishes. Triggered by pushes to `main`, manual dispatch, and — via `workflow_run` — the completion of `Ingest recalls`. That last trigger is what gets fresh data onto the site: the build reads Turso, so ingested rows are invisible until a rebuild.
 
 A few things about this workflow that are easy to trip over:
 
-- `workflow_run` fires on _any_ conclusion, so the build job is guarded on `conclusion == 'success'`. A failed ingest produces a deploy run that skips its build rather than republishing against a half-written database.
+- `workflow_run` fires on _any_ conclusion, so the `checks` job is guarded on `conclusion == 'success'` and the build job needs it. A failed ingest produces a deploy run that skips everything rather than republishing against a half-written database.
 - The `workflows: ['Ingest recalls']` trigger matches the ingest workflow's `name:` **as a string**. Rename one without the other and the chain silently stops — no error, deploys just stop happening after ingests.
 - `concurrency: pages` with `cancel-in-progress: false` queues overlapping deploys instead of racing them, so the live site is never left half-published.
 
+### `Checks` — [`.github/workflows/ci.yml`](.github/workflows/ci.yml)
+
+Formatting, type check, unit tests, and the accessibility checks. Runs on every pull request, and the deploy workflow calls the same file before building, so a change is checked before it merges and again before it ships. None of it needs the database or any secret.
+
 ### Required secrets
 
-Both workflows need these as **repository** secrets (Settings → Secrets and variables → Actions):
+The ingest and deploy workflows need these as **repository** secrets (Settings → Secrets and variables → Actions):
 
 | Secret               | Value                                    |
 | -------------------- | ---------------------------------------- |
