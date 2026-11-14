@@ -158,22 +158,31 @@ export function buildApiUrl({ start, end }: RecallWindow) {
 // in the hazard (STURDY Act dresser tip-overs, magnet and button-battery ingestion)
 // are not dropped — at the cost of occasionally admitting an adult product whose hazard
 // mentions child-resistance, such as lighters.
+// The product-type terms (toy, doll, plush…) carry word boundaries: unbounded, "doll" would
+// match "Dollar Tree" and "toy" would match "Toyota".
 const CHILD_KEYWORDS =
-  /baby|infant|toddler|child|crib|stroller|teether|teething|nursery|bassinet|playpen|play yard|high ?chair|booster|car seat|pacifier|diaper|swaddle|bouncer|youth|kids?\b/i;
+  /baby|infant|toddler|child|crib|stroller|teether|teething|nursery|bassinet|playpen|play yard|high ?chair|booster|car seat|pacifier|diaper|swaddle|bouncer|youth|sippy|bunk beds?\b|\bplush|\bdolls?\b|\btoys?\b|kids?\b/i;
 
 // CPSC's own Hazards[].HazardType and .HazardTypeID come back empty on every record — same
 // as Products[].CategoryID above — so the category has to be derived from the hazard prose.
-// First match wins, so order matters: 'battery' precedes 'choking' because button-cell
-// recalls describe ingestion, and 'tip-over' precedes 'fall' because dresser recalls
-// mention both.
+// First match wins, so order matters: 'battery' and 'magnet' precede 'choking' because
+// those recalls describe ingestion, 'tip-over' precedes 'fall' because dresser recalls
+// mention both, and 'chemical' precedes 'poisoning' so lead poisoning lands under lead.
 // The tag is stored in the DB and doubles as the hazard page's URL slug, so it must stay
 // lowercase and hyphenated. The label lives alongside it so a new tag cannot ship without
-// a heading.
+// a heading. Tags are assigned at ingest: after editing this list, re-ingest a wide window
+// (INGEST_DAYS) so recalls already stored pick up the change.
 export const HAZARD_TAGS = [
   {
     tag: 'battery',
     label: 'Button battery ingestion',
     pattern: /button cell|coin batter|Reese's Law/i,
+  },
+  {
+    // Narrower than /magnet/: a cooler whose latch magnet detaches is a choking recall.
+    tag: 'magnet',
+    label: 'Magnet ingestion',
+    pattern: /magnet ingestion|high-powered magnet|loose magnet/i,
   },
   {
     tag: 'suffocation',
@@ -182,10 +191,29 @@ export const HAZARD_TAGS = [
   },
   { tag: 'tip-over', label: 'Tip-over', pattern: /tip.?over|unstable|STURDY/i },
   { tag: 'entrapment', label: 'Entrapment', pattern: /entrapment/i },
+  { tag: 'strangulation', label: 'Strangulation', pattern: /strangulat/i },
   { tag: 'choking', label: 'Choking', pattern: /choking|small parts?\b/i },
   { tag: 'fall', label: 'Fall or collapse', pattern: /fall hazard|collapse/i },
-  { tag: 'fire', label: 'Fire, burn, or shock', pattern: /fire|burn|overheat|shock/i },
+  {
+    tag: 'fire',
+    label: 'Fire, burn, or shock',
+    pattern: /fire|burn|overheat|shock|flame|electrocut/i,
+  },
   { tag: 'drowning', label: 'Drowning', pattern: /drowning|submersion/i },
+  {
+    // Not a bare /lead/: hazard paragraphs say "can lead to serious injury" constantly.
+    tag: 'chemical',
+    label: 'Lead or chemical exposure',
+    pattern:
+      /\blead (?:poisoning|paint|content|concentration)|(?:levels of|contains?) lead\b|phthalate|asbestos/i,
+  },
+  {
+    tag: 'poisoning',
+    label: 'Poisoning',
+    pattern: /poison|child-resistant/i,
+  },
+  { tag: 'crash', label: 'Crash or head injury', pattern: /crash|head injury/i },
+  { tag: 'laceration', label: 'Cut or impalement', pattern: /lacerat|impale|amputat/i },
 ] as const satisfies readonly { tag: string; label: string; pattern: RegExp }[];
 
 /** Derives a short, filterable category from CPSC's hazard paragraph. Null when unmatched. */

@@ -26,6 +26,14 @@ describe('hazardTag', () => {
     ['The high chair can collapse', 'fall'],
     ['The charger can overheat, posing a burn hazard', 'fire'],
     ['Risk of drowning in the bath seat', 'drowning'],
+    ['The cubes can liberate loose high-powered magnets, posing an ingestion hazard', 'magnet'],
+    ['The drawstrings can cause death or serious injury from strangulation', 'strangulation'],
+    ['The zipper contains levels of lead that exceed the federal lead paint ban', 'chemical'],
+    ['The coin purses contain higher phthalate concentration levels', 'chemical'],
+    ['The wipes contain lidocaine, which must be in child-resistant packaging', 'poisoning'],
+    ['The helmets can fail to protect the user in the event of a crash', 'crash'],
+    ['The dive sticks exceed the compress limit, posing an impalement hazard', 'laceration'],
+    ['The containers lack flame mitigation devices', 'fire'],
   ])('tags %j as %s', (text, tag) => {
     expect(hazardTag(text)).toBe(tag);
   });
@@ -42,8 +50,30 @@ describe('hazardTag', () => {
     );
   });
 
+  it('prefers magnet over choking for high-powered magnets', () => {
+    expect(
+      hazardTag('The high-powered magnets fit within the small parts cylinder, posing a hazard')
+    ).toBe('magnet');
+  });
+
+  it('leaves a magnet that is only a choking-size part under choking', () => {
+    expect(hazardTag("The cooler's latch magnet can detach, posing a choking hazard")).toBe(
+      'choking'
+    );
+  });
+
+  it('files lead poisoning under chemical exposure, not poisoning', () => {
+    expect(hazardTag('The cup has high lead content, posing a lead poisoning hazard')).toBe(
+      'chemical'
+    );
+  });
+
+  it('does not read the verb "lead" as the metal', () => {
+    expect(hazardTag('The strap can detach, which can lead to serious injury')).toBeNull();
+  });
+
   it('returns null when no pattern matches', () => {
-    expect(hazardTag('The paint contains lead, which is toxic')).toBeNull();
+    expect(hazardTag('The poles can shed fibers, posing a risk of skin irritation')).toBeNull();
   });
 });
 
@@ -86,6 +116,21 @@ describe('isChildProduct', () => {
       )
     ).toBe(true);
   });
+
+  it.each([
+    'Melissa & Doug Recalls Fire Truck Activity Board Toys Due to Choking Hazard',
+    'Acme Recalls Plush Bears',
+    'Acme Recalls Fashion Dolls',
+  ])('matches the product-type term in %j', title => {
+    expect(isChildProduct(recall({ Title: title }))).toBe(true);
+  });
+
+  it.each(['Dollar Tree Stores Recalls Electric Balloon Pumps', 'Toyota Recalls Golf Carts'])(
+    'does not match a product-type term inside another word: %j',
+    title => {
+      expect(isChildProduct(recall({ Title: title }))).toBe(false);
+    }
+  );
 
   it('rejects an adult product', () => {
     expect(

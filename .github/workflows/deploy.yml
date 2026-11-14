@@ -21,11 +21,18 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  build:
-    runs-on: ubuntu-latest
+  # The same checks pull requests get. Nothing here touches the database, so a type error
+  # or failing test stops the deploy before the build spends time querying Turso.
+  checks:
     # workflow_run fires on completion regardless of outcome — skip rebuilds after a
     # failed ingest, which would otherwise republish against a half-written database.
+    # The build job needs this one, so skipping here skips the whole deploy.
     if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
+    uses: ./.github/workflows/ci.yml
+
+  build:
+    needs: checks
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout your repository using git
         uses: actions/checkout@v7
@@ -38,20 +45,6 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
-
-      # Neither step touches the database, so a type error or failing test stops the
-      # deploy before the build spends time querying Turso.
-      - name: Type check
-        run: npm run check
-
-      - name: Unit tests
-        run: npm test
-
-      - name: Install accessibility test browser
-        run: npx playwright install --with-deps chromium
-
-      - name: Accessibility checks with fixture data
-        run: npm run test:a11y
 
       - name: Build with Astro
         run: npm run build
