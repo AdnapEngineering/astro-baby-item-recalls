@@ -6,12 +6,6 @@ import { PRODUCT_TYPES, productTypeLabel } from './recalls';
 export type ProductTypeRecallGroup = TagGroup<RecallSummary>;
 
 /**
- * Recalls per product-type page; larger groups continue at /products/<type>/2/ and so on.
- * PRODUCT_PAGE_SIZE overrides it so the browser tests can paginate their two-recall fixture.
- */
-export const PRODUCT_PAGE_SIZE = Number(process.env.PRODUCT_PAGE_SIZE) || 50;
-
-/**
  * Groups every stored recall by product type, in PRODUCT_TYPES order — the order parents
  * scan in (sleep, car seats, strollers…), rather than the largest-first order hazards use.
  *

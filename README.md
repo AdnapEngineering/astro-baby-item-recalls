@@ -22,8 +22,9 @@ Product types (cribs and sleep, car seats, strollers, feeding, bath, furniture, 
 
 - **_Searchable list:_** `/recalls/` lists every stored recall, newest first, with keyword, product-type, and hazard filters that run in the browser over build-time data. The keyword search also matches manufacturer, importer, and distributor names, which often carry a brand the title leaves out. Filters sync to `?q=`, `?type=`, and `?hazard=`, so a search can be shared, and the home page's search box hands off to it.
 - **_Recall detail pages:_** `/recalls/<id>/` shows everything stored for a recall — every CPSC photo in a slider, product names and model numbers, hazards, remedy and remedy options, injuries, units, where sold, contact info, and the official CPSC link.
-- **_Product browsing:_** `/products/` groups recalls by the kind of item (crib, car seat, stroller…), with a page per type — the way parents look for something they own. A recall covering several kinds appears under each. Type pages show 50 recalls each and continue at `/products/<type>/2/`.
+- **_Product browsing:_** `/products/` groups recalls by the kind of item (crib, car seat, stroller…), with a page per type — the way parents look for something they own. A recall covering several kinds appears under each.
 - **_Hazard browsing:_** Recalls are tagged by hazard type with a page per hazard, each row showing a thumbnail and the remedy.
+- **_Paged lists:_** Product-type and hazard pages show 50 recalls each and continue at `/products/<type>/2/` or `/hazards/<hazard>/2/`, so the first page's address never changes. Each links into search already filtered to that type or hazard.
 - **_Latest recalls:_** The home page shows the newest stored recalls and when the data was last updated.
 - **_Responsive design:_** Built with modern web standards for a good experience across devices.
 - **_Fast & efficient:_** Statically built, with Astro's partial hydration for the interactive pieces.
