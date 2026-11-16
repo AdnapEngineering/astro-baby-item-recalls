@@ -44,38 +44,40 @@ const facts = [
         <p class="text-base-content/70">
           Recalled <time datetime={recall.recallDate}>{formatRecallDate(recall.recallDate)}</time>
         </p>
-        {
-          recall.productTypes.length > 0 && (
-            <ul class="mt-3 flex flex-wrap gap-2" aria-label="Product types">
-              {recall.productTypes.map(type => (
-                <li>
-                  <a
-                    href={withBase(`/products/${type.slug}/`)}
-                    class="badge badge-info hover:underline"
-                  >
-                    {type.label}
-                  </a>
-                </li>
-              ))}
-            </ul>
-          )
-        }
-        {
-          recall.hazardTags.length > 0 && (
-            <ul class="mt-3 flex flex-wrap gap-2" aria-label="Hazard categories">
-              {recall.hazardTags.map(tag => (
-                <li>
-                  <a
-                    href={withBase(`/hazards/${tag.slug}/`)}
-                    class="badge badge-warning hover:underline"
-                  >
-                    {tag.label}
-                  </a>
-                </li>
-              ))}
-            </ul>
-          )
-        }
+        <div class="mt-3 flex flex-wrap gap-2">
+          {
+            recall.productTypes.length > 0 && (
+              <ul class="flex flex-wrap gap-2" aria-label="Product types">
+                {recall.productTypes.map(type => (
+                  <li>
+                    <a
+                      href={withBase(`/products/${type.slug}/`)}
+                      class="badge badge-info hover:underline"
+                    >
+                      {type.label}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            )
+          }
+          {
+            recall.hazardTags.length > 0 && (
+              <ul class="flex flex-wrap gap-2" aria-label="Hazard categories">
+                {recall.hazardTags.map(tag => (
+                  <li>
+                    <a
+                      href={withBase(`/hazards/${tag.slug}/`)}
+                      class="badge badge-warning hover:underline"
+                    >
+                      {tag.label}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            )
+          }
+        </div>
       </header>
 
       <PhotoSlider photos={photos} title={recall.title} />

@@ -8,10 +8,22 @@ export function withBase(path: string) {
   return `${base}/${path.replace(/^\/+/, '')}`;
 }
 
+const strip = (value: string) => value.replace(/\/+$/, '') || '/';
+
 /** Compare a pathname to a link href, ignoring trailing-slash differences. */
 export function isActive(pathname: string, href: string) {
-  const strip = (value: string) => value.replace(/\/+$/, '') || '/';
   return strip(pathname) === strip(href);
+}
+
+/**
+ * True on the link's own page and on every page beneath it, so "Products" stays lit on
+ * /products/toys/2/. The home link only matches itself, or it would match every page.
+ */
+export function isInSection(pathname: string, href: string) {
+  const path = strip(pathname);
+  const section = strip(href);
+  if (isActive(path, section)) return true;
+  return section !== strip(withBase('/')) && path.startsWith(`${section}/`);
 }
 
 export type NavLink = { href: string; label: string };

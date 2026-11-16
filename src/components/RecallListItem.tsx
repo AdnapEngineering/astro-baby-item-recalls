@@ -13,12 +13,12 @@ export default function RecallListItem({
 }) {
   const Heading = `h${headingLevel}` as const;
   return (
-    <li className="card card-side items-start gap-4 bg-base-200 p-4">
+    <li className="surface card card-side items-start gap-3 p-4 sm:gap-4">
       {recall.imageUrl && (
         <img
           src={recall.imageUrl}
           alt={recall.imageAlt}
-          className="h-20 w-20 shrink-0 rounded-md bg-white object-contain"
+          className="h-16 w-16 shrink-0 rounded-md bg-white object-contain sm:h-20 sm:w-20"
           loading="lazy"
           decoding="async"
           width={80}
@@ -26,19 +26,31 @@ export default function RecallListItem({
         />
       )}
       <div className="min-w-0 flex-1 space-y-1">
-        <Heading className="font-medium">
-          <a href={withBase(`/recalls/${recall.recallId}/`)} className="link link-primary">
+        <Heading className="leading-snug font-semibold">
+          <a
+            href={withBase(`/recalls/${recall.recallId}/`)}
+            className="link link-primary link-hover"
+          >
             {recall.title}
           </a>
         </Heading>
-        <p className="text-sm text-base-content/70">
-          <time dateTime={recall.recallDate}>{recall.dateLabel}</time>
-          {recall.productTypes.length > 0 && (
-            <> · {recall.productTypes.map(type => type.label).join(', ')}</>
-          )}
-          {recall.hazardTags.length > 0 && (
-            <> · {recall.hazardTags.map(tag => tag.label).join(', ')}</>
-          )}
+        <p className="flex flex-wrap items-center gap-1.5 text-sm text-base-content/70">
+          <time dateTime={recall.recallDate} className="mr-1">
+            {recall.dateLabel}
+          </time>
+          {/* Same colours as the recall page's badges: blue for what it is, amber for the danger. */}
+          {recall.productTypes.map(type => (
+            <span key={type.slug} className="badge badge-sm badge-info">
+              <span className="sr-only">Product type: </span>
+              {type.label}
+            </span>
+          ))}
+          {recall.hazardTags.map(tag => (
+            <span key={tag.slug} className="badge badge-sm badge-warning">
+              <span className="sr-only">Hazard: </span>
+              {tag.label}
+            </span>
+          ))}
         </p>
         {recall.productIdentifiers.length > 0 && (
           <p className="text-sm">

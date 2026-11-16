@@ -1,5 +1,5 @@
 ---
-import { isActive, navLinks, withBase } from '../lib/nav';
+import { isActive, isInSection, navLinks, withBase } from '../lib/nav';
 
 // Astro.url.pathname includes the base path, which is why navLinks are built
 // with withBase() — both sides of the comparison are already prefixed.
@@ -7,7 +7,7 @@ const { pathname } = Astro.url;
 ---
 
 <header
-  class="flex flex-col items-center gap-2 bg-base-100 p-3 shadow-sm sm:flex-row sm:justify-between"
+  class="flex flex-col items-center gap-1 border-b border-base-300 bg-base-100 px-3 py-2 sm:flex-row sm:justify-between"
 >
   <div>
     <a href={withBase('/')} class="btn btn-ghost text-lg font-bold text-primary"> Baby Safety </a>
@@ -15,16 +15,24 @@ const { pathname } = Astro.url;
 
   <nav aria-label="Main">
     {/* Wraps rather than overflowing the viewport on narrow phones. */}
-    <ul class="menu menu-horizontal flex-wrap justify-center gap-1 px-1">
+    <ul class="flex flex-wrap justify-center">
       {
         navLinks.map(link => {
-          const active = isActive(pathname, link.href);
+          // aria-current="page" on the page itself; "true" marks the section on pages beneath it.
+          const current = isActive(pathname, link.href)
+            ? 'page'
+            : isInSection(pathname, link.href)
+              ? 'true'
+              : undefined;
           return (
             <li>
               <a
                 href={link.href}
-                class:list={['min-h-11 font-medium', { 'menu-active underline': active }]}
-                aria-current={active ? 'page' : undefined}
+                class:list={[
+                  'flex min-h-11 items-center border-b-2 px-2 font-medium hover:text-primary sm:px-3',
+                  current ? 'border-primary text-primary' : 'border-transparent',
+                ]}
+                aria-current={current}
               >
                 {link.label}
               </a>
