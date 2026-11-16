@@ -45,6 +45,22 @@ const facts = [
           Recalled <time datetime={recall.recallDate}>{formatRecallDate(recall.recallDate)}</time>
         </p>
         {
+          recall.productTypes.length > 0 && (
+            <ul class="mt-3 flex flex-wrap gap-2" aria-label="Product types">
+              {recall.productTypes.map(type => (
+                <li>
+                  <a
+                    href={withBase(`/products/${type.slug}/`)}
+                    class="badge badge-info hover:underline"
+                  >
+                    {type.label}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          )
+        }
+        {
           recall.hazardTags.length > 0 && (
             <ul class="mt-3 flex flex-wrap gap-2" aria-label="Hazard categories">
               {recall.hazardTags.map(tag => (

@@ -234,6 +234,105 @@ export function hazardLabel(tag: string): string {
   return HAZARD_TAGS.find(h => h.tag === tag)?.label ?? tag;
 }
 
+// What kind of item a recall covers, so parents can browse by the thing they own rather
+// than by hazard. Same reason as HAZARD_TAGS: CPSC's Products[].CategoryID is always empty.
+// Unlike hazard tags these are NOT stored — they are derived at build time from fields the
+// recall row already holds (see productTypes below), so editing this table takes effect on
+// the next build with no migration or re-ingest.
+// Every matching type applies, not just the first: a crib-and-dresser combo belongs on both
+// pages. Word boundaries guard the terms that would otherwise misfire — "dresses" inside
+// "addresses", "swing" inside "swing-arm lamp", "doll" inside "Dollar Tree", "toy" inside
+// "Toyota". Ambiguous words are only matched in a qualifying phrase: a bare "booster" can be
+// a car seat or a dining seat, a bare "jumper" can be a dress, and a bare "gate" or
+// "cabinet" says nothing about safety. The tag doubles as the /products/<tag>/ URL slug, so
+// it must stay lowercase and hyphenated. Table order is the order the products page lists.
+export const PRODUCT_TYPES = [
+  {
+    tag: 'sleep',
+    label: 'Cribs, bassinets & sleep',
+    pattern:
+      /\bcribs?\b|bassinets?|\bplay ?yards?\b|\bplaypens?\b|\bsleepers?\b|\bsleep(?:ing)? (?:sacks?|bags?|pods?|positioners?)\b|\bswaddl|\b(?:infant|baby) (?:loungers?|nests?)\b|\bsupport cushions?\b|\bbed rails?\b|\bnap mats?\b/i,
+  },
+  {
+    tag: 'car-seat',
+    label: 'Car seats & boosters',
+    pattern: /\bcar seats?\b|\bbelt.?positioning boosters?\b/i,
+  },
+  {
+    tag: 'stroller',
+    label: 'Strollers & carriers',
+    pattern:
+      /\bstrollers?\b|\bprams?\b|\btravel systems?\b|\b(?:baby|infant|soft|backpack|frame|hip ?seat) carriers?\b|\bbaby wraps?\b|\bslings?\b|\bwagons?\b/i,
+  },
+  {
+    tag: 'feeding',
+    label: 'Feeding',
+    pattern:
+      /\bhigh ?chairs?\b|\bhook-on (?:high )?chairs?\b|\bdining boosters?\b|\bbottles?\b|\bsippy\b|\bpacifiers?\b|\bteethers?\b|\bteething\b|\bbibs?\b|\bbreast ?pumps?\b|\bformula\b|\bspoons?\b|\bstraw cups?\b|\bsnack (?:cups?|catchers?)\b|\bfeeding\b/i,
+  },
+  {
+    tag: 'bath',
+    label: 'Bath & potty',
+    pattern:
+      /\bbaths?\b|\bbath ?tubs?\b|\b(?:baby|infant) tubs?\b|\bbathers?\b|\bpott(?:y|ies)\b|\btoilet trainers?\b/i,
+  },
+  {
+    tag: 'furniture',
+    label: 'Dressers & furniture',
+    pattern:
+      /\bdressers?\b|\bchests? of drawers\b|\bdrawer chests?\b|\bwardrobes?\b|\barmoires?\b|\bbookcases?\b|\bbookshel(?:f|ves)\b|\b(?:bunk|loft|toddler|kids'?|children'?s) beds?\b|\bchanging (?:tables?|stations?)\b|\brocking chairs?\b|\b(?:glider|nursery) (?:rockers?|gliders?)\b|\bnightstands?\b|\b(?:kids'?|children'?s|toddler) (?:tables?|chairs?)\b|\btoy (?:chests?|boxes|storage)\b|\bstorage cabinets?\b/i,
+  },
+  {
+    tag: 'gear',
+    label: 'Bouncers, swings & walkers',
+    pattern:
+      /\bbouncers?\b|\bbouncy seats?\b|\bswings?\b(?![-\w])|\bwalkers?\b|\bactivity (?:cent(?:er|re)s?|tables?|gyms?)\b|\bplay gyms?\b|\b(?:baby|infant|door(?:way)?|activity) jumpers?\b|\bjumperoos?\b|\bexersaucers?\b|\b(?:infant|baby) (?:seats?|rockers?)\b|\bfloor seats?\b/i,
+  },
+  {
+    tag: 'home-safety',
+    label: 'Home safety',
+    pattern:
+      /\b(?:baby|safety|pet|stair|security|pressure.?mounted|hardware.?mounted) gates?\b|\b(?:baby|video|audio) monitors?\b|\boutlet (?:covers?|plugs?)\b|\b(?:cabinet|drawer) (?:locks?|latches?)\b|\b(?:corner|edge) (?:guards?|protectors?)\b|\bwindow (?:guards?|stops?)\b|\banti.?tip (?:kits?|straps?|devices?)\b|\bfurniture (?:anchors?|straps?)\b|\bdoor ?knob covers?\b/i,
+  },
+  {
+    tag: 'toys',
+    label: 'Toys',
+    pattern:
+      /\btoys?\b|\bdolls?\b|\bplush|\bstuffed animals?\b|\brattles?\b|\bbuilding (?:blocks?|sets?|bricks?)\b|\bpuzzles?\b|\bride-?ons?\b|\btricycles?\b|\bscooters?\b|\bbalance bikes?\b|\bslime\b|\bsquish(?:y|ies)\b|\bputty\b|\bplay ?sets?\b|\bplayhouses?\b|\bcrayons?\b|\bfigurines?\b|\baction figures?\b|\bkites?\b|\bswing sets?\b|\btrampolines?\b/i,
+  },
+  {
+    tag: 'clothing',
+    label: 'Clothing, shoes & jewelry',
+    pattern:
+      /\bpajamas?\b|\bpyjamas?\b|\bsleepwear\b|\bnightgowns?\b|\brobes?\b|\bhoodies?\b|\bsweatshirts?\b|\bjackets?\b|\bcoats?\b|\bdrawstrings?\b|\b(?:t-)?shirts?\b|\bonesies?\b|\bbodysuits?\b|\brompers?\b|\bdresses\b|\bleggings\b|\bpants\b|\bsocks?\b|\bshoes?\b|\bsneakers?\b|\bsandals?\b|\bboots?\b|\bfootwear\b|\bhats?\b|\bbeanies?\b|\bmittens?\b|\bjewelry\b|\bnecklaces?\b|\bbracelets?\b|\bearrings?\b|\bclothing\b|\bapparel\b|\bgarments?\b|\bswim(?:suits?|wear)\b|\bcostumes?\b/i,
+  },
+] as const satisfies readonly { tag: string; label: string; pattern: RegExp }[];
+
+/**
+ * Every product type a recall covers, in PRODUCT_TYPES order. Empty when nothing matches.
+ *
+ * Matches the title and product names first, and falls back to the description only when
+ * those name no type: descriptions mention neighbouring products in passing ("fits most
+ * strollers"), which would otherwise pile extra types onto a recall that is already typed.
+ * Hazard text is never used — "children can fall from the crib" says nothing about what a
+ * high-chair recall is.
+ */
+export function productTypes(recall: {
+  title: string;
+  productNames: (string | null)[];
+  description: string | null;
+}): string[] {
+  const matching = (text: string) =>
+    PRODUCT_TYPES.filter(({ pattern }) => pattern.test(text)).map(({ tag }) => tag);
+  const named = matching([recall.title, ...recall.productNames].filter(Boolean).join(' '));
+  return named.length || !recall.description ? named : matching(recall.description);
+}
+
+/** Heading for a product type; an unknown slug falls back to itself, like hazardLabel. */
+export function productTypeLabel(tag: string): string {
+  return PRODUCT_TYPES.find(p => p.tag === tag)?.label ?? tag;
+}
+
 export function isChildProduct(item: RecallItem) {
   const haystack = [
     item.Title,

@@ -9,6 +9,9 @@ const routes = [
   'recalls/2/',
   'hazards/',
   'hazards/entrapment/',
+  'products/',
+  'products/sleep/',
+  'products/stroller/',
 ];
 const tags = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa', 'best-practice'];
 
@@ -68,12 +71,29 @@ test('search is keyboard operable and announces results without moving focus', a
   await expect(search).toBeFocused();
   expect((await new AxeBuilder({ page }).withTags(tags).analyze()).violations).toEqual([]);
   await search.fill('');
+  const type = page.getByRole('combobox', { name: 'Product type' });
+  const hazard = page.getByRole('combobox', { name: 'Hazard' });
   await page.keyboard.press('Tab');
-  await expect(page.getByRole('combobox')).toBeFocused();
+  await expect(type).toBeFocused();
+  await page.keyboard.press('Tab');
+  await expect(hazard).toBeFocused();
   await page.keyboard.press('e');
-  await expect(page.getByRole('combobox')).toHaveValue('entrapment');
+  await expect(hazard).toHaveValue('entrapment');
   await expect(page.getByRole('status')).toHaveText('1 of 2 recalls match.');
-  await expect(page.getByRole('combobox')).toBeFocused();
+  await expect(hazard).toBeFocused();
+});
+
+test('product type filter reads from and writes to the URL', async ({ page }) => {
+  await page.goto('recalls/?type=stroller');
+  const type = page.getByRole('combobox', { name: 'Product type' });
+  await expect(type).toHaveValue('stroller');
+  await expect(page.getByRole('status')).toHaveText('1 of 2 recalls match.');
+  await type.selectOption('sleep');
+  await expect(page.getByRole('status')).toHaveText('1 of 2 recalls match.');
+  await expect(page).toHaveURL(/[?&]type=sleep\b/);
+  await type.selectOption('');
+  await expect(page.getByRole('status')).toHaveText('2 recalls, newest first.');
+  await expect(page).not.toHaveURL(/type=/);
 });
 
 test('photo slider moves between photos by button and keeps focus at the ends', async ({

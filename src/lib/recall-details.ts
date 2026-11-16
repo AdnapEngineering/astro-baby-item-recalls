@@ -6,7 +6,7 @@ import type {
   RemedyOptionRow,
 } from '../db/schema';
 import { formatRecallDate } from './format';
-import { hazardLabel } from './recalls';
+import { hazardLabel, productTypeLabel, productTypes } from './recalls';
 
 // Kept free of the DB client so the assembly can be unit-tested and so client islands can
 // import the types without dragging libSQL into the browser bundle.
@@ -16,6 +16,8 @@ export type RecallDetail = RecallRow & {
   hazardTexts: string[];
   /** Distinct hazard categories, each with the label used for its hazard page. */
   hazardTags: { slug: string; label: string }[];
+  /** What kind of item this is, derived at build time; see PRODUCT_TYPES. */
+  productTypes: { slug: string; label: string }[];
   /** Refund | Repair | Replace, deduplicated. */
   remedyOptions: string[];
   /** Product names and model numbers supplied by CPSC, in API order. */
@@ -63,7 +65,19 @@ export function assembleRecallDetails(
   const details = new Map<number, RecallDetail>(
     dropDuplicateRecalls(recallRows).map(row => [
       row.recallId,
-      { ...row, hazardTexts: [], hazardTags: [], remedyOptions: [] },
+      {
+        ...row,
+        hazardTexts: [],
+        hazardTags: [],
+        // Derived here rather than stored at ingest: recomputed on every build, so a change
+        // to PRODUCT_TYPES reaches every recall without a migration or a wide re-ingest.
+        productTypes: productTypes({
+          title: row.title,
+          productNames: row.productIdentifiers.map(product => product.name),
+          description: row.description,
+        }).map(slug => ({ slug, label: productTypeLabel(slug) })),
+        remedyOptions: [],
+      },
     ])
   );
 
@@ -115,6 +129,7 @@ export type RecallSummary = {
   remedy: string | null;
   remedyOptions: string[];
   hazardTags: { slug: string; label: string }[];
+  productTypes: { slug: string; label: string }[];
   productIdentifiers: ProductIdentifier[];
 };
 
@@ -129,6 +144,7 @@ export function toRecallSummary(detail: RecallDetail): RecallSummary {
     remedy: detail.remedy,
     remedyOptions: detail.remedyOptions,
     hazardTags: detail.hazardTags,
+    productTypes: detail.productTypes,
     productIdentifiers: detail.productIdentifiers,
   };
 }

@@ -2,7 +2,7 @@
 import RecallSearch from '../../components/RecallSearch.tsx';
 import Layout from '../../layouts/Layout.astro';
 import { getRecallDetails } from '../../lib/recall-data';
-import { HAZARD_TAGS } from '../../lib/recalls';
+import { HAZARD_TAGS, PRODUCT_TYPES } from '../../lib/recalls';
 import { toSearchEntry } from '../../lib/search';
 
 // Build-time query: the island receives the whole list as props and filters it in the
@@ -12,11 +12,15 @@ const entries = (await getRecallDetails()).map(toSearchEntry);
 const hazards = HAZARD_TAGS.filter(h =>
   entries.some(e => e.hazardTags.some(t => t.slug === h.tag))
 ).map(({ tag, label }) => ({ slug: tag, label }));
+// Likewise for product types.
+const types = PRODUCT_TYPES.filter(p =>
+  entries.some(e => e.productTypes.some(t => t.slug === p.tag))
+).map(({ tag, label }) => ({ slug: tag, label }));
 ---
 
 <Layout
   title="Search recalls — Baby Safety Site"
-  description="Search every children's product recall on this site by product, brand, store, or hazard."
+  description="Search every children's product recall on this site by product, brand, store, product type, or hazard."
 >
   <main id="main" tabindex="-1" class="mx-auto max-w-3xl p-4">
     <h1 class="mb-2 text-2xl font-bold">Search recalls</h1>
@@ -29,7 +33,7 @@ const hazards = HAZARD_TAGS.filter(h =>
           <span>No recalls to show yet — the recall database has not been populated.</span>
         </div>
       ) : (
-        <RecallSearch entries={entries} hazards={hazards} client:load />
+        <RecallSearch entries={entries} hazards={hazards} types={types} client:load />
       )
     }
   </main>

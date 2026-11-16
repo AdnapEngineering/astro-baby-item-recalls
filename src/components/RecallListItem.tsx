@@ -2,7 +2,7 @@ import { withBase } from '../lib/nav';
 import type { RecallSummary } from '../lib/recall-details';
 
 // A React component rather than an .astro one so the same row renders statically on the
-// hazard pages and interactively inside the search island.
+// hazard and product pages and interactively inside the search island.
 export default function RecallListItem({
   recall,
   headingLevel = 2,
@@ -33,6 +33,9 @@ export default function RecallListItem({
         </Heading>
         <p className="text-sm text-base-content/70">
           <time dateTime={recall.recallDate}>{recall.dateLabel}</time>
+          {recall.productTypes.length > 0 && (
+            <> · {recall.productTypes.map(type => type.label).join(', ')}</>
+          )}
           {recall.hazardTags.length > 0 && (
             <> · {recall.hazardTags.map(tag => tag.label).join(', ')}</>
           )}

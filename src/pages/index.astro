@@ -48,7 +48,7 @@ const lastUpdated = details.reduce<string | null>(
 
       <h2 class="mb-2 text-lg font-semibold">How to check a product</h2>
       <ol class="mb-4 list-inside list-decimal space-y-1">
-        <li>Search for the brand or product name, or browse recalls by hazard.</li>
+        <li>Search for the brand or product name, or browse recalls by product type or hazard.</li>
         <li>Open a recall and compare the photo, model numbers, and dates with your item.</li>
         <li>
           If it matches, stop using it and follow the remedy — the company's contact details are on
@@ -83,6 +83,9 @@ const lastUpdated = details.reduce<string | null>(
             <p class="flex flex-wrap gap-4">
               <a href={withBase('/recalls/')} class="link link-primary">
                 Search all {details.length} recalls →
+              </a>
+              <a href={withBase('/products/')} class="link link-primary">
+                Browse recalls by product →
               </a>
               <a href={withBase('/hazards/')} class="link link-primary">
                 Browse recalls by hazard →
