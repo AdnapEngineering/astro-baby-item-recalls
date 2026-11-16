@@ -124,6 +124,21 @@ describe('productTypes', () => {
     ['Acme Recalls Plush Rattles', 'toys'],
     ["Carter's Recalls Children's Pajamas", 'clothing'],
     ['Acme Recalls Hoodies with Drawstrings', 'clothing'],
+    ["Acme Children's LED Tutu Skirts Recalled", 'clothing'],
+    ['Pillani Recalls Nursing Pillows', 'feeding'],
+    ["Wiifo Children's Tower Stools Recalled", 'furniture'],
+    ['Woodure Toddler Kitchen Step Stools Recalled', 'furniture'],
+    ["Little Partners Recalls Children's Grow 'N Stow Folding Learning Towers", 'furniture'],
+    ['Goody King Magnetic Building Cubes and Blocks Recalled', 'toys'],
+    ["Tiny Land Children's Play Tents Recalled", 'toys'],
+    ['Cobelae Busy Books Recalled', 'toys'],
+    ['Favoto Bicycle Helmets Recalled', 'outdoor'],
+    ["Semfri Children's Helmets Recalled", 'outdoor'],
+    ['Yamazuki Recalls Youth All-Terrain Vehicles (ATVs)', 'outdoor'],
+    ['Pacific Cycle Recalls Schwinn Bicycle Child Carriers', 'outdoor'],
+    ['Gazelle Recalls Urban Arrow Cargo E-Bikes', 'outdoor'],
+    ['Acme Recalls Balance Bikes', 'outdoor'],
+    ['SereneLife Recalls Above-Ground Pools', 'outdoor'],
   ])('types %j as %s', (title, type) => {
     expect(typesOf(title)).toContain(type);
   });
@@ -157,6 +172,8 @@ describe('productTypes', () => {
     'Acme Recalls Products Sold at Addresses Nationwide',
     'Acme Recalls Booster Pumps',
     'Acme Recalls Jogger Strings',
+    'Golden Link Recalls Popcorn Helmet Containers',
+    'Giant Bicycle Recalls LED-Light Keys Included with Bike Lock Sets',
   ])('ignores the near-miss %j', title => {
     expect(typesOf(title)).toEqual([]);
   });
