@@ -1,14 +1,12 @@
 ---
 import type { GetStaticPaths, Page } from 'astro';
+import PageLinks from '../../../components/PageLinks.astro';
 import RecallListItem from '../../../components/RecallListItem.tsx';
 import Layout from '../../../layouts/Layout.astro';
 import { withBase } from '../../../lib/nav';
+import { LIST_PAGE_SIZE } from '../../../lib/pagination';
+import { getProductTypeGroups, type ProductTypeRecallGroup } from '../../../lib/product-types';
 import type { RecallSummary } from '../../../lib/recall-details';
-import {
-  getProductTypeGroups,
-  PRODUCT_PAGE_SIZE,
-  type ProductTypeRecallGroup,
-} from '../../../lib/product-types';
 
 // Data → routes: one or more static pages per product type that at least one recall carries.
 // Page 1 stays at /products/<type>/, so links from badges and the index never change; later
@@ -19,7 +17,7 @@ export const getStaticPaths = (async ({ paginate }) => {
     paginate(group.recalls, {
       params: { type: group.slug },
       props: { group },
-      pageSize: PRODUCT_PAGE_SIZE,
+      pageSize: LIST_PAGE_SIZE,
     })
   );
 }) satisfies GetStaticPaths;
@@ -30,8 +28,6 @@ const { group, page } = Astro.props as {
 };
 const count = page.total;
 const paged = page.lastPage > 1;
-// Built with withBase rather than page.url so every link keeps the site's trailing slash.
-const pageHref = (n: number) => withBase(`/products/${group.slug}/${n === 1 ? '' : `${n}/`}`);
 const pageLabel = paged ? ` (page ${page.currentPage} of ${page.lastPage})` : '';
 ---
 
@@ -58,34 +54,6 @@ const pageLabel = paged ? ` (page ${page.currentPage} of ${page.lastPage})` : ''
       {page.data.map(recall => <RecallListItem recall={recall} />)}
     </ul>
 
-    {
-      paged && (
-        <nav aria-label="Pages" class="mt-8 flex flex-wrap items-center justify-center gap-2">
-          {page.currentPage > 1 && (
-            <a href={pageHref(page.currentPage - 1)} class="btn btn-sm" rel="prev">
-              ← Previous
-            </a>
-          )}
-          {Array.from({ length: page.lastPage }, (_, i) => i + 1).map(n =>
-            n === page.currentPage ? (
-              <a href={pageHref(n)} class="btn btn-sm btn-primary" aria-current="page">
-                <span class="sr-only">Page </span>
-                {n}
-              </a>
-            ) : (
-              <a href={pageHref(n)} class="btn btn-sm">
-                <span class="sr-only">Page </span>
-                {n}
-              </a>
-            )
-          )}
-          {page.currentPage < page.lastPage && (
-            <a href={pageHref(page.currentPage + 1)} class="btn btn-sm" rel="next">
-              Next →
-            </a>
-          )}
-        </nav>
-      )
-    }
+    <PageLinks page={page} firstPage={`/products/${group.slug}/`} />
   </main>
 </Layout>

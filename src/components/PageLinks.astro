@@ -1,0 +1,42 @@
+---
+import type { Page } from 'astro';
+import { withBase } from '../lib/nav';
+
+interface Props {
+  page: Page<unknown>;
+  /** Path of page 1 without the site base, e.g. "/hazards/choking/". */
+  firstPage: string;
+}
+
+const { page, firstPage } = Astro.props;
+// Built with withBase rather than page.url so every link keeps the site's trailing slash.
+const pageHref = (n: number) => withBase(n === 1 ? firstPage : `${firstPage}${n}/`);
+const numbers = Array.from({ length: page.lastPage }, (_, i) => i + 1);
+---
+
+{
+  page.lastPage > 1 && (
+    <nav aria-label="Pages" class="mt-8 flex flex-wrap items-center justify-center gap-2">
+      {page.currentPage > 1 && (
+        <a href={pageHref(page.currentPage - 1)} class="btn btn-sm" rel="prev">
+          ← Previous
+        </a>
+      )}
+      {numbers.map(n => (
+        <a
+          href={pageHref(n)}
+          class:list={['btn btn-sm', { 'btn-primary': n === page.currentPage }]}
+          aria-current={n === page.currentPage ? 'page' : undefined}
+        >
+          <span class="sr-only">Page </span>
+          {n}
+        </a>
+      ))}
+      {page.currentPage < page.lastPage && (
+        <a href={pageHref(page.currentPage + 1)} class="btn btn-sm" rel="next">
+          Next →
+        </a>
+      )}
+    </nav>
+  )
+}

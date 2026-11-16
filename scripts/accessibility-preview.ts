@@ -15,7 +15,11 @@ try {
       Description: 'Compare the model number on the crib label with AC-123 before use.',
       RecallDate: '2026-10-01T00:00:00',
       Products: [{ Name: 'Acme Convertible Crib', Model: 'AC-123' }],
-      Hazards: [{ Name: 'Children can become trapped, posing an entrapment hazard.' }],
+      // The fall hazard pairs with recall 2's, so the fall hazard spans two pages as well.
+      Hazards: [
+        { Name: 'Children can become trapped, posing an entrapment hazard.' },
+        { Name: 'The side rail can detach, posing a fall hazard.' },
+      ],
       RemedyOptions: [{ Option: 'Refund' }],
       Remedies: [{ Name: 'Stop using the crib and contact Acme for a refund.' }],
       Importers: [{ Name: 'Acme Imports, Inc., of Springfield, Ohio' }],
@@ -40,7 +44,7 @@ try {
     db,
     {
       RecallID: 2,
-      // Also a bassinet, so with PRODUCT_PAGE_SIZE=1 below the sleep type spans two pages.
+      // Also a bassinet, so with LIST_PAGE_SIZE=1 below the sleep type spans two pages.
       Title: 'Bobo recalls stroller and bassinet sets due to fall hazard',
       RecallDate: '2026-09-01T00:00:00',
       Hazards: [{ Name: 'The frame can collapse, posing a fall hazard.' }],
@@ -57,7 +61,7 @@ try {
       ...process.env,
       DATABASE_URL: `file:${file}`,
       DATABASE_AUTH_TOKEN: '',
-      PRODUCT_PAGE_SIZE: '1',
+      LIST_PAGE_SIZE: '1',
     },
   });
   if (build.status !== 0) throw new Error('Accessibility fixture build failed');

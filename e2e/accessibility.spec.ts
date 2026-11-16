@@ -9,6 +9,7 @@ const routes = [
   'recalls/2/',
   'hazards/',
   'hazards/entrapment/',
+  'hazards/fall/2/',
   'products/',
   'products/sleep/',
   'products/sleep/2/',
@@ -97,16 +98,28 @@ test('product type filter reads from and writes to the URL', async ({ page }) =>
   await expect(page).not.toHaveURL(/type=/);
 });
 
-test('product type pages link to each other in order', async ({ page }) => {
-  await page.goto('products/sleep/');
-  const pages = page.getByRole('navigation', { name: 'Pages' });
-  await expect(pages.getByRole('link', { name: 'Page 1' })).toHaveAttribute('aria-current', 'page');
-  await pages.getByRole('link', { name: 'Next →' }).click();
-  await expect(page).toHaveURL(/products\/sleep\/2\/$/);
-  await expect(page.getByText('showing 2–2')).toBeVisible();
-  await expect(pages.getByRole('link', { name: 'Next →' })).toHaveCount(0);
-  await pages.getByRole('link', { name: '← Previous' }).click();
-  await expect(page).toHaveURL(/products\/sleep\/$/);
+for (const section of ['products/sleep', 'hazards/fall']) {
+  test(`${section} pages link to each other in order`, async ({ page }) => {
+    await page.goto(`${section}/`);
+    const pages = page.getByRole('navigation', { name: 'Pages' });
+    await expect(pages.getByRole('link', { name: 'Page 1' })).toHaveAttribute(
+      'aria-current',
+      'page'
+    );
+    await pages.getByRole('link', { name: 'Next →' }).click();
+    await expect(page).toHaveURL(new RegExp(`${section}/2/$`));
+    await expect(page.getByText('showing 2–2')).toBeVisible();
+    await expect(pages.getByRole('link', { name: 'Next →' })).toHaveCount(0);
+    await pages.getByRole('link', { name: '← Previous' }).click();
+    await expect(page).toHaveURL(new RegExp(`${section}/$`));
+  });
+}
+
+test('hazard pages link into search filtered to that hazard', async ({ page }) => {
+  await page.goto('hazards/entrapment/');
+  await page.getByRole('link', { name: 'search within these recalls' }).click();
+  await expect(page.getByRole('combobox', { name: 'Hazard' })).toHaveValue('entrapment');
+  await expect(page.getByRole('status')).toHaveText('1 of 2 recalls match.');
 });
 
 test('photo slider moves between photos by button and keeps focus at the ends', async ({
