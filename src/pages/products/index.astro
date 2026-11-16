@@ -15,7 +15,7 @@ const groups = await getProductTypeGroups();
     <h1 class="mb-2 text-2xl font-bold">Browse by product</h1>
     <p class="mb-6 text-base-content/80">
       Recalls grouped by the kind of item. A recall can cover more than one kind, so it may appear
-      in several groups. If you can't find your item here, try
+      in several groups. If you can't find your item here, try{' '}
       <a href={withBase('/recalls/')} class="link link-primary">searching</a> by brand or product name.
     </p>
 
@@ -30,7 +30,7 @@ const groups = await getProductTypeGroups();
             <li>
               <a
                 href={withBase(`/products/${group.slug}/`)}
-                class="card flex-row items-center justify-between bg-base-200 p-4 hover:bg-base-300"
+                class="surface card flex-row items-center justify-between p-4 hover:border-primary"
               >
                 <span class="font-semibold">{group.name}</span>
                 <span class="badge badge-neutral">{group.recalls.length}</span>

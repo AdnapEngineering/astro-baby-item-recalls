@@ -29,7 +29,7 @@ const groups = await getHazardGroups();
             <li>
               <a
                 href={withBase(`/hazards/${group.slug}/`)}
-                class="card flex-row items-center justify-between bg-base-200 p-4 hover:bg-base-300"
+                class="surface card flex-row items-center justify-between p-4 hover:border-primary"
               >
                 <span class="font-semibold">{group.name}</span>
                 <span class="badge badge-neutral">{group.recalls.length}</span>
