@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { groupByHazard, type HazardJoinRow } from './hazard-groups';
+import { groupByHazard, groupByTag, type HazardJoinRow } from './hazard-groups';
 
 type Recall = { recallId: number; title: string; recallDate: string };
 
@@ -37,6 +37,13 @@ describe('groupByHazard', () => {
     ]);
     expect(groups.map(g => g.slug)).toEqual(['choking', 'fire']);
     expect(groups[0].recalls.map(r => r.recallId)).toEqual([3, 2, 4]);
+  });
+
+  it('labels groups with the supplied label function when used generically', () => {
+    const [group] = groupByTag([row('car-seat', 1, '2026-01-01T00:00:00')], tag =>
+      tag.toUpperCase()
+    );
+    expect(group).toMatchObject({ slug: 'car-seat', name: 'CAR-SEAT' });
   });
 
   it('labels groups and drops the tag from each recall', () => {

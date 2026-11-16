@@ -133,6 +133,33 @@ describe('filterRecalls', () => {
     expect(filterRecalls(entries, '', 'fall').map(e => e.recallId)).toEqual([2]);
     expect(filterRecalls(entries, 'crib', 'fall')).toEqual([]);
   });
+
+  it('filters by product type, alone and with a hazard', () => {
+    expect(filterRecalls(entries, '', null, 'sleep').map(e => e.recallId)).toEqual([1]);
+    expect(filterRecalls(entries, '', 'fall', 'stroller').map(e => e.recallId)).toEqual([2]);
+    expect(filterRecalls(entries, '', 'fall', 'sleep')).toEqual([]);
+  });
+
+  it('searches product type labels', () => {
+    expect(filterRecalls(entries, 'bassinets').map(e => e.recallId)).toEqual([1]);
+  });
+});
+
+describe('product types on assembled recalls', () => {
+  it('derives labelled types from the title and product names', () => {
+    const [detail] = assembleRecallDetails(
+      [
+        recallRow(1, {
+          title: 'Acme Recalls Nursery Products',
+          productIdentifiers: [{ name: 'Acme Infant Car Seat', model: 'CS-1' }],
+        }),
+      ],
+      [],
+      []
+    );
+    expect(detail.productTypes).toEqual([{ slug: 'car-seat', label: 'Car seats & boosters' }]);
+    expect(toRecallSummary(detail).productTypes).toEqual(detail.productTypes);
+  });
 });
 
 describe('dropDuplicateRecalls', () => {

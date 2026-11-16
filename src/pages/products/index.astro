@@ -1,0 +1,44 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import { withBase } from '../../lib/nav';
+import { getProductTypeGroups } from '../../lib/product-types';
+
+// Build-time query: the deployed page is plain HTML with no database behind it.
+const groups = await getProductTypeGroups();
+---
+
+<Layout
+  title="Browse by product — Baby Safety Site"
+  description="Children's product recalls grouped by the kind of item — cribs, car seats, strollers, and more."
+>
+  <main id="main" tabindex="-1" class="mx-auto max-w-3xl p-4">
+    <h1 class="mb-2 text-2xl font-bold">Browse by product</h1>
+    <p class="mb-6 text-base-content/80">
+      Recalls grouped by the kind of item. A recall can cover more than one kind, so it may appear
+      in several groups. If you can't find your item here, try
+      <a href={withBase('/recalls/')} class="link link-primary">searching</a> by brand or product name.
+    </p>
+
+    {
+      groups.length === 0 ? (
+        <div class="alert alert-info">
+          <span>No products to show yet — the recall database has not been populated.</span>
+        </div>
+      ) : (
+        <ul class="grid gap-3 sm:grid-cols-2">
+          {groups.map(group => (
+            <li>
+              <a
+                href={withBase(`/products/${group.slug}/`)}
+                class="card flex-row items-center justify-between bg-base-200 p-4 hover:bg-base-300"
+              >
+                <span class="font-semibold">{group.name}</span>
+                <span class="badge badge-neutral">{group.recalls.length}</span>
+              </a>
+            </li>
+          ))}
+        </ul>
+      )
+    }
+  </main>
+</Layout>

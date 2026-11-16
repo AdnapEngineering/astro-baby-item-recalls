@@ -16,6 +16,7 @@ export function toSearchEntry(detail: RecallDetail): SearchEntry {
     ...detail.companyNames,
     detail.recallNumber,
     ...detail.hazardTags.map(tag => tag.label),
+    ...detail.productTypes.map(type => type.label),
   ]
     .filter(Boolean)
     .join(' ')
@@ -26,18 +27,20 @@ export function toSearchEntry(detail: RecallDetail): SearchEntry {
 }
 
 /**
- * Entries containing every whitespace-separated term of the query (in any order), and
- * carrying the given hazard tag when one is set. An empty query matches everything.
+ * Entries containing every whitespace-separated term of the query (in any order), carrying
+ * the given hazard tag and product type when those are set. An empty query matches everything.
  */
 export function filterRecalls(
   entries: SearchEntry[],
   query: string,
-  hazard: string | null = null
+  hazard: string | null = null,
+  type: string | null = null
 ): SearchEntry[] {
   const terms = query.toLowerCase().split(/\s+/).filter(Boolean);
   return entries.filter(
     entry =>
       (!hazard || entry.hazardTags.some(tag => tag.slug === hazard)) &&
+      (!type || entry.productTypes.some(t => t.slug === type)) &&
       terms.every(term => entry.haystack.includes(term))
   );
 }

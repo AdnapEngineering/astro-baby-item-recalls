@@ -16,10 +16,13 @@ The CPSC API has no usable product category field, so children's products are id
 
 Hazard categories are derived the same way, from the hazard paragraph, using the `HAZARD_TAGS` table in that file. Both are applied at ingest, so after changing either list, run a wide ingest once (for example `gh workflow run "Ingest recalls" -f days=200`) so recalls already stored are re-filtered and re-tagged.
 
+Product types (cribs and sleep, car seats, strollers, feeding, bath, furniture, gear, home safety, toys, clothing) come from the `PRODUCT_TYPES` table in the same file, matched against the title and product names, falling back to the description. Unlike hazard tags they are **not** stored: they are derived at build time from columns every recall already has, so editing `PRODUCT_TYPES` takes effect on the next build, with no migration or re-ingest. Each build logs how many recalls matched a type (`[product-types] 412/450 recalls typed`), which is the cue to tune the table.
+
 ## Features
 
-- **_Searchable list:_** `/recalls/` lists every stored recall, newest first, with a keyword and hazard filter that runs in the browser over build-time data. The keyword search also matches manufacturer, importer, and distributor names, which often carry a brand the title leaves out. Filters sync to `?q=` and `?hazard=`, so a search can be shared, and the home page's search box hands off to it.
+- **_Searchable list:_** `/recalls/` lists every stored recall, newest first, with keyword, product-type, and hazard filters that run in the browser over build-time data. The keyword search also matches manufacturer, importer, and distributor names, which often carry a brand the title leaves out. Filters sync to `?q=`, `?type=`, and `?hazard=`, so a search can be shared, and the home page's search box hands off to it.
 - **_Recall detail pages:_** `/recalls/<id>/` shows everything stored for a recall — every CPSC photo in a slider, product names and model numbers, hazards, remedy and remedy options, injuries, units, where sold, contact info, and the official CPSC link.
+- **_Product browsing:_** `/products/` groups recalls by the kind of item (crib, car seat, stroller…), with a page per type — the way parents look for something they own. A recall covering several kinds appears under each.
 - **_Hazard browsing:_** Recalls are tagged by hazard type with a page per hazard, each row showing a thumbnail and the remedy.
 - **_Latest recalls:_** The home page shows the newest stored recalls and when the data was last updated.
 - **_Responsive design:_** Built with modern web standards for a good experience across devices.
@@ -37,13 +40,14 @@ Hazard categories are derived the same way, from the hazard paragraph, using the
 
 | Path                        | What lives there                                                                  |
 | --------------------------- | --------------------------------------------------------------------------------- |
-| `src/pages/`                | Routes — home, about, recall search/detail, and hazard index/detail pages         |
+| `src/pages/`                | Routes — home, about, recall search/detail, product and hazard index/detail pages |
 | `src/components/`           | Header/footer, the shared recall list row, and the search island                  |
 | `src/db/schema.ts`          | Drizzle schema: `recalls`, `hazards`, `remedy_options`                            |
 | `src/db/client.ts`          | libSQL client; reads `DATABASE_URL` / `DATABASE_AUTH_TOKEN`                       |
-| `src/lib/recalls.ts`        | CPSC API parsing, child-product matching, and the hazard tag/label/pattern table  |
+| `src/lib/recalls.ts`        | CPSC API parsing, child-product matching, hazard tag and product-type tables      |
 | `src/lib/recall-data.ts`    | The build-time DB load every page shares (memoised per build)                     |
 | `src/lib/recall-details.ts` | Pure reshaping of DB rows into page data; `hazard-groups.ts` and `search.ts` too  |
+| `src/lib/product-types.ts`  | Build-time grouping of recalls by product type, with the coverage log line        |
 | `src/db/migrations/`        | Hand-written SQL migrations, applied manually to an existing database             |
 | `scripts/ingest.ts`         | The ingest job — fetches CPSC recalls and upserts into Turso                      |
 | `scripts/fetch-recalls.ts`  | Fetches the window in 7-day chunks, retrying CPSC outages with backoff            |

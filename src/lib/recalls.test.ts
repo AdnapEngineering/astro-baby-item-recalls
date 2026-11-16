@@ -7,6 +7,9 @@ import {
   hazardTag,
   isChildProduct,
   parseRecallResponse,
+  PRODUCT_TYPES,
+  productTypeLabel,
+  productTypes,
   RecallSchemaError,
   recallWindow,
   splitWindow,
@@ -92,6 +95,90 @@ describe('hazardLabel', () => {
 
   it('falls back to the raw slug for an unknown tag', () => {
     expect(hazardLabel('retired-tag')).toBe('retired-tag');
+  });
+});
+
+describe('productTypes', () => {
+  const typesOf = (title: string, productNames: string[] = [], description: string | null = null) =>
+    productTypes({ title, productNames, description });
+
+  it.each([
+    ['Acme Recalls Convertible Cribs Due to Entrapment Hazard', 'sleep'],
+    ['Bobo Recalls Infant Loungers', 'sleep'],
+    ['Graco Recalls Infant Car Seats', 'car-seat'],
+    ['Evenflo Recalls Belt-Positioning Boosters', 'car-seat'],
+    ['Bugaboo Recalls Strollers Due to Fall Hazard', 'stroller'],
+    ['Ergo Recalls Soft Baby Carriers', 'stroller'],
+    ['Stokke Recalls High Chairs', 'feeding'],
+    ['Philips Recalls Breast Pumps', 'feeding'],
+    ['Summer Recalls Infant Bath Seats', 'bath'],
+    ['Acme Recalls Potty Training Seats', 'bath'],
+    ['IKEA Recalls Chests of Drawers Due to Tip-Over Hazard', 'furniture'],
+    ['Delta Recalls Toddler Beds', 'furniture'],
+    ['Fisher-Price Recalls Infant Swings', 'gear'],
+    ['Acme Recalls Baby Walkers', 'gear'],
+    ['Regalo Recalls Baby Gates', 'home-safety'],
+    ['Acme Recalls Video Baby Monitors', 'home-safety'],
+    ['Safety 1st Recalls Cabinet Locks', 'home-safety'],
+    ['Melissa & Doug Recalls Wooden Toys', 'toys'],
+    ['Acme Recalls Plush Rattles', 'toys'],
+    ["Carter's Recalls Children's Pajamas", 'clothing'],
+    ['Acme Recalls Hoodies with Drawstrings', 'clothing'],
+  ])('types %j as %s', (title, type) => {
+    expect(typesOf(title)).toContain(type);
+  });
+
+  it('applies every matching type, in table order', () => {
+    expect(typesOf('Acme Recalls Crib and Dresser Combos')).toEqual(['sleep', 'furniture']);
+  });
+
+  it('matches product names as well as the title', () => {
+    expect(typesOf('Acme Recalls Nursery Items', ['Acme Glider Stroller'])).toEqual(['stroller']);
+  });
+
+  it('falls back to the description only when the title and names match nothing', () => {
+    expect(typesOf('Acme Recalls Model 5', [], 'This high chair can tip over.')).toEqual([
+      'feeding',
+    ]);
+    expect(typesOf('Acme Recalls Cribs', [], 'Fits most strollers and car seats.')).toEqual([
+      'sleep',
+    ]);
+  });
+
+  it('returns no types when nothing matches', () => {
+    expect(typesOf('Acme Recalls Lighters', [], null)).toEqual([]);
+  });
+
+  it.each([
+    'Dollar Tree Recalls Lamps',
+    'Toyota Recalls Accessories',
+    'Acme Recalls Swing-Arm Lamps',
+    'Acme Recalls Tubular Frames',
+    'Acme Recalls Products Sold at Addresses Nationwide',
+    'Acme Recalls Booster Pumps',
+    'Acme Recalls Jogger Strings',
+  ])('ignores the near-miss %j', title => {
+    expect(typesOf(title)).toEqual([]);
+  });
+
+  it('does not read a dining booster as a car seat, or a jumper dress as gear', () => {
+    expect(typesOf('Acme Recalls Dining Boosters')).toEqual(['feeding']);
+    expect(typesOf("Acme Recalls Girls' Jumper Dresses")).toEqual(['clothing']);
+  });
+});
+
+describe('PRODUCT_TYPES', () => {
+  it('uses unique, URL-safe tags', () => {
+    const tags = PRODUCT_TYPES.map(p => p.tag);
+    expect(new Set(tags).size).toBe(tags.length);
+    for (const tag of tags) expect(tag).toMatch(/^[a-z]+(-[a-z]+)*$/);
+  });
+});
+
+describe('productTypeLabel', () => {
+  it('maps a known tag to its heading and falls back to the slug', () => {
+    expect(productTypeLabel('car-seat')).toBe('Car seats & boosters');
+    expect(productTypeLabel('retired-type')).toBe('retired-type');
   });
 });
 

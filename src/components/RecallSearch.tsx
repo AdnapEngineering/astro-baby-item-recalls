@@ -5,16 +5,20 @@ import RecallListItem from './RecallListItem';
 interface Props {
   entries: SearchEntry[];
   hazards: { slug: string; label: string }[];
+  types: { slug: string; label: string }[];
 }
+
+type Filters = { query: string; hazard: string; type: string };
 
 // Filters build-time data entirely in the browser — no API or DB calls — so search works
 // on the static host and stays instant. Without JavaScript the full list still renders.
-export default function RecallSearch({ entries, hazards }: Props) {
+export default function RecallSearch({ entries, hazards, types }: Props) {
   const [query, setQuery] = useState('');
   const [hazard, setHazard] = useState('');
+  const [type, setType] = useState('');
   const [ready, setReady] = useState(false);
 
-  // ?q= and ?hazard= let a search be bookmarked or shared, and let the home page's search
+  // ?q=, ?hazard= and ?type= let a search be bookmarked or shared, and let the home page's search
   // box hand off to this page. Read after hydration rather than in useState's initializer:
   // the server render had no URL, and differing initial state would break hydration.
   useEffect(() => {
@@ -22,17 +26,23 @@ export default function RecallSearch({ entries, hazards }: Props) {
     setQuery(params.get('q') ?? '');
     const fromUrl = params.get('hazard');
     if (fromUrl && hazards.some(h => h.slug === fromUrl)) setHazard(fromUrl);
+    const typeFromUrl = params.get('type');
+    if (typeFromUrl && types.some(t => t.slug === typeFromUrl)) setType(typeFromUrl);
     setReady(true);
   }, []);
 
   // replaceState, not pushState: an entry per keystroke would make Back unusable.
-  function update(nextQuery: string, nextHazard: string) {
-    setQuery(nextQuery);
-    setHazard(nextHazard);
+  // Takes only the filters that changed; the rest keep their current value.
+  function update(changes: Partial<Filters>) {
+    const next = { query, hazard, type, ...changes };
+    setQuery(next.query);
+    setHazard(next.hazard);
+    setType(next.type);
     const url = new URL(window.location.href);
     for (const [key, value] of [
-      ['q', nextQuery.trim()],
-      ['hazard', nextHazard],
+      ['q', next.query.trim()],
+      ['hazard', next.hazard],
+      ['type', next.type],
     ]) {
       if (value) url.searchParams.set(key, value);
       else url.searchParams.delete(key);
@@ -43,10 +53,10 @@ export default function RecallSearch({ entries, hazards }: Props) {
   // Keeps typing responsive: the list re-renders at lower priority than the input.
   const deferredQuery = useDeferredValue(query);
   const results = useMemo(
-    () => filterRecalls(entries, deferredQuery, hazard || null),
-    [entries, deferredQuery, hazard]
+    () => filterRecalls(entries, deferredQuery, hazard || null, type || null),
+    [entries, deferredQuery, hazard, type]
   );
-  const filtered = deferredQuery.trim() !== '' || hazard !== '';
+  const filtered = deferredQuery.trim() !== '' || hazard !== '' || type !== '';
 
   return (
     <div>
@@ -66,8 +76,24 @@ export default function RecallSearch({ entries, hazards }: Props) {
             className="input w-full"
             placeholder="e.g. crib, stroller, Walmart"
             value={query}
-            onChange={e => update(e.target.value, hazard)}
+            onChange={e => update({ query: e.target.value })}
           />
+        </label>
+        <label>
+          <span className="mb-1 block font-medium">Product type</span>
+          <select
+            aria-controls="recall-results"
+            className="select w-full sm:w-auto"
+            value={type}
+            onChange={e => update({ type: e.target.value })}
+          >
+            <option value="">All products</option>
+            {types.map(t => (
+              <option key={t.slug} value={t.slug}>
+                {t.label}
+              </option>
+            ))}
+          </select>
         </label>
         <label>
           <span className="mb-1 block font-medium">Hazard</span>
@@ -75,7 +101,7 @@ export default function RecallSearch({ entries, hazards }: Props) {
             aria-controls="recall-results"
             className="select w-full sm:w-auto"
             value={hazard}
-            onChange={e => update(query, e.target.value)}
+            onChange={e => update({ hazard: e.target.value })}
           >
             <option value="">All hazards</option>
             {hazards.map(h => (
@@ -88,7 +114,7 @@ export default function RecallSearch({ entries, hazards }: Props) {
       </form>
 
       <p id="search-help" hidden={!ready} className="mb-3 text-sm">
-        Results update as you type or choose a hazard.
+        Results update as you type or choose a filter.
       </p>
       <noscript>
         <p className="mb-4">
