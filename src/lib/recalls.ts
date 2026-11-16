@@ -243,9 +243,9 @@ export function hazardLabel(tag: string): string {
 // pages. Word boundaries guard the terms that would otherwise misfire — "dresses" inside
 // "addresses", "swing" inside "swing-arm lamp", "doll" inside "Dollar Tree", "toy" inside
 // "Toyota". Ambiguous words are only matched in a qualifying phrase: a bare "booster" can be
-// a car seat or a dining seat, a bare "jumper" can be a dress, and a bare "gate" or
-// "cabinet" says nothing about safety. The tag doubles as the /products/<tag>/ URL slug, so
-// it must stay lowercase and hyphenated. Table order is the order the products page lists.
+// a car seat or a dining seat, a bare "jumper" can be a dress, a bare "gate" or "cabinet"
+// says nothing about safety, and a bare "helmet" can be a novelty popcorn bucket. The tag
+// doubles as the /products/<tag>/ URL slug, so it must stay lowercase and hyphenated. Table order is the order the products page lists.
 export const PRODUCT_TYPES = [
   {
     tag: 'sleep',
@@ -268,7 +268,7 @@ export const PRODUCT_TYPES = [
     tag: 'feeding',
     label: 'Feeding',
     pattern:
-      /\bhigh ?chairs?\b|\bhook-on (?:high )?chairs?\b|\bdining boosters?\b|\bbottles?\b|\bsippy\b|\bpacifiers?\b|\bteethers?\b|\bteething\b|\bbibs?\b|\bbreast ?pumps?\b|\bformula\b|\bspoons?\b|\bstraw cups?\b|\bsnack (?:cups?|catchers?)\b|\bfeeding\b/i,
+      /\bhigh ?chairs?\b|\bhook-on (?:high )?chairs?\b|\bdining boosters?\b|\bbottles?\b|\bsippy\b|\bpacifiers?\b|\bteethers?\b|\bteething\b|\bbibs?\b|\bbreast ?pumps?\b|\bformula\b|\bspoons?\b|\bstraw cups?\b|\bsnack (?:cups?|catchers?)\b|\bfeeding\b|\bnursing pillows?\b/i,
   },
   {
     tag: 'bath',
@@ -280,7 +280,7 @@ export const PRODUCT_TYPES = [
     tag: 'furniture',
     label: 'Dressers & furniture',
     pattern:
-      /\bdressers?\b|\bchests? of drawers\b|\bdrawer chests?\b|\bwardrobes?\b|\barmoires?\b|\bbookcases?\b|\bbookshel(?:f|ves)\b|\b(?:bunk|loft|toddler|kids'?|children'?s) beds?\b|\bchanging (?:tables?|stations?)\b|\brocking chairs?\b|\b(?:glider|nursery) (?:rockers?|gliders?)\b|\bnightstands?\b|\b(?:kids'?|children'?s|toddler) (?:tables?|chairs?)\b|\btoy (?:chests?|boxes|storage)\b|\bstorage cabinets?\b/i,
+      /\bdressers?\b|\bchests? of drawers\b|\bdrawer chests?\b|\bwardrobes?\b|\barmoires?\b|\bbookcases?\b|\bbookshel(?:f|ves)\b|\b(?:bunk|loft|toddler|kids'?|children'?s) beds?\b|\bchanging (?:tables?|stations?)\b|\brocking chairs?\b|\b(?:glider|nursery) (?:rockers?|gliders?)\b|\bnightstands?\b|\b(?:kids'?|children'?s|toddler) (?:tables?|chairs?)\b|\btoy (?:chests?|boxes|storage)\b|\bstorage cabinets?\b|\b(?:tower|step) stools?\b|\b(?:learning|standing|toddler) towers?\b/i,
   },
   {
     tag: 'gear',
@@ -298,13 +298,19 @@ export const PRODUCT_TYPES = [
     tag: 'toys',
     label: 'Toys',
     pattern:
-      /\btoys?\b|\bdolls?\b|\bplush|\bstuffed animals?\b|\brattles?\b|\bbuilding (?:blocks?|sets?|bricks?)\b|\bpuzzles?\b|\bride-?ons?\b|\btricycles?\b|\bscooters?\b|\bbalance bikes?\b|\bslime\b|\bsquish(?:y|ies)\b|\bputty\b|\bplay ?sets?\b|\bplayhouses?\b|\bcrayons?\b|\bfigurines?\b|\baction figures?\b|\bkites?\b|\bswing sets?\b|\btrampolines?\b/i,
+      /\btoys?\b|\bdolls?\b|\bplush|\bstuffed animals?\b|\brattles?\b|\bbuilding (?:blocks?|sets?|bricks?|cubes?)\b|\bmagnetic (?:cubes?|blocks?|tiles?)\b|\bpuzzles?\b|\bslime\b|\bsquish(?:y|ies)\b|\bputty\b|\bplay ?sets?\b|\bplayhouses?\b|\bcrayons?\b|\bfigurines?\b|\baction figures?\b|\bkites?\b|\bplay tents?\b|\b(?:busy|story|picture|board) books?\b|\b(?:finger ?painting|painting|craft|handwriting practice) kits?\b|\bwater balloons?\b/i,
+  },
+  {
+    tag: 'outdoor',
+    label: 'Bikes, helmets & outdoor play',
+    pattern:
+      /\b(?:bicycle|bike|youth|multi-purpose|children'?s|kids'?|toddler|ski|skate(?:board)?) helmets?\b|\btricycles?\b|\bscooters?\b|\b(?:balance|kids'?|children'?s|youth) bikes?\b|\bcargo (?:e-?)?bikes?\b|\bbicycle child (?:seats?|carriers?)\b|\bbike (?:seats?|trailers?)\b|\bride-?ons?\b|\ball-terrain vehicles?\b|\bATVs?\b|\btrampolines?\b|\bswing sets?\b|\bziplines?\b|\b(?:above-ground|kiddie|inflatable) pools?\b/i,
   },
   {
     tag: 'clothing',
     label: 'Clothing, shoes & jewelry',
     pattern:
-      /\bpajamas?\b|\bpyjamas?\b|\bsleepwear\b|\bnightgowns?\b|\brobes?\b|\bhoodies?\b|\bsweatshirts?\b|\bjackets?\b|\bcoats?\b|\bdrawstrings?\b|\b(?:t-)?shirts?\b|\bonesies?\b|\bbodysuits?\b|\brompers?\b|\bdresses\b|\bleggings\b|\bpants\b|\bsocks?\b|\bshoes?\b|\bsneakers?\b|\bsandals?\b|\bboots?\b|\bfootwear\b|\bhats?\b|\bbeanies?\b|\bmittens?\b|\bjewelry\b|\bnecklaces?\b|\bbracelets?\b|\bearrings?\b|\bclothing\b|\bapparel\b|\bgarments?\b|\bswim(?:suits?|wear)\b|\bcostumes?\b/i,
+      /\bpajamas?\b|\bpyjamas?\b|\bsleepwear\b|\bnightgowns?\b|\brobes?\b|\bhoodies?\b|\bsweatshirts?\b|\bjackets?\b|\bcoats?\b|\bdrawstrings?\b|\b(?:t-)?shirts?\b|\bonesies?\b|\bbodysuits?\b|\brompers?\b|\bdresses\b|\bleggings\b|\bpants\b|\bsocks?\b|\bshoes?\b|\bsneakers?\b|\bsandals?\b|\bboots?\b|\bfootwear\b|\bhats?\b|\bbeanies?\b|\bmittens?\b|\bjewelry\b|\bnecklaces?\b|\bbracelets?\b|\bearrings?\b|\bclothing\b|\bapparel\b|\bgarments?\b|\bswim(?:suits?|wear)\b|\bcostumes?\b|\bskirts?\b|\bheadbands?\b|\bpurses?\b/i,
   },
 ] as const satisfies readonly { tag: string; label: string; pattern: RegExp }[];
 

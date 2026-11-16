@@ -5,8 +5,11 @@ import { PRODUCT_TYPES, productTypeLabel } from './recalls';
 
 export type ProductTypeRecallGroup = TagGroup<RecallSummary>;
 
-/** Recalls in one group past which the detail page stops being comfortably browsable. */
-const PAGINATE_THRESHOLD = 100;
+/**
+ * Recalls per product-type page; larger groups continue at /products/<type>/2/ and so on.
+ * PRODUCT_PAGE_SIZE overrides it so the browser tests can paginate their two-recall fixture.
+ */
+export const PRODUCT_PAGE_SIZE = Number(process.env.PRODUCT_PAGE_SIZE) || 50;
 
 /**
  * Groups every stored recall by product type, in PRODUCT_TYPES order — the order parents
@@ -33,13 +36,6 @@ export async function getProductTypeGroups(): Promise<ProductTypeRecallGroup[]> 
     console.info(
       `[product-types] ${details.length - untyped}/${details.length} recalls typed; ${untyped} untyped`
     );
-  }
-  for (const group of groups) {
-    if (group.recalls.length > PAGINATE_THRESHOLD) {
-      console.warn(
-        `[product-types] ${group.slug} has ${group.recalls.length} recalls — consider paginating`
-      );
-    }
   }
   return groups;
 }

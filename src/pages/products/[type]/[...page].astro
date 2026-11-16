@@ -1,0 +1,91 @@
+---
+import type { GetStaticPaths, Page } from 'astro';
+import RecallListItem from '../../../components/RecallListItem.tsx';
+import Layout from '../../../layouts/Layout.astro';
+import { withBase } from '../../../lib/nav';
+import type { RecallSummary } from '../../../lib/recall-details';
+import {
+  getProductTypeGroups,
+  PRODUCT_PAGE_SIZE,
+  type ProductTypeRecallGroup,
+} from '../../../lib/product-types';
+
+// Data → routes: one or more static pages per product type that at least one recall carries.
+// Page 1 stays at /products/<type>/, so links from badges and the index never change; later
+// pages are /products/<type>/2/ and so on. The group rides along so no page needs a second query.
+export const getStaticPaths = (async ({ paginate }) => {
+  const groups = await getProductTypeGroups();
+  return groups.flatMap(group =>
+    paginate(group.recalls, {
+      params: { type: group.slug },
+      props: { group },
+      pageSize: PRODUCT_PAGE_SIZE,
+    })
+  );
+}) satisfies GetStaticPaths;
+
+const { group, page } = Astro.props as {
+  group: ProductTypeRecallGroup;
+  page: Page<RecallSummary>;
+};
+const count = page.total;
+const paged = page.lastPage > 1;
+// Built with withBase rather than page.url so every link keeps the site's trailing slash.
+const pageHref = (n: number) => withBase(`/products/${group.slug}/${n === 1 ? '' : `${n}/`}`);
+const pageLabel = paged ? ` (page ${page.currentPage} of ${page.lastPage})` : '';
+---
+
+<Layout
+  title={`${group.name} recalls${pageLabel} — Baby Safety Site`}
+  description={`Children's product recalls for ${group.name.toLowerCase()}.`}
+>
+  <main id="main" tabindex="-1" class="mx-auto max-w-3xl p-4">
+    <a href={withBase('/products/')} class="link link-primary mb-4 inline-block text-sm">
+      ← All product types
+    </a>
+    <h1 class="mb-2 text-2xl font-bold">{group.name}</h1>
+    <p class="mb-6 text-base-content/80">
+      {count} recall{count === 1 ? '' : 's'} for this kind of product, newest first{
+        paged && `; showing ${page.start + 1}–${page.end + 1}`
+      }. To narrow by brand or hazard, <a
+        href={withBase(`/recalls/?type=${group.slug}`)}
+        class="link link-primary">search within these recalls</a
+      >.
+    </p>
+
+    {/* No client directive: the rows render to static HTML here, with no JS shipped. */}
+    <ul class="space-y-3">
+      {page.data.map(recall => <RecallListItem recall={recall} />)}
+    </ul>
+
+    {
+      paged && (
+        <nav aria-label="Pages" class="mt-8 flex flex-wrap items-center justify-center gap-2">
+          {page.currentPage > 1 && (
+            <a href={pageHref(page.currentPage - 1)} class="btn btn-sm" rel="prev">
+              ← Previous
+            </a>
+          )}
+          {Array.from({ length: page.lastPage }, (_, i) => i + 1).map(n =>
+            n === page.currentPage ? (
+              <a href={pageHref(n)} class="btn btn-sm btn-primary" aria-current="page">
+                <span class="sr-only">Page </span>
+                {n}
+              </a>
+            ) : (
+              <a href={pageHref(n)} class="btn btn-sm">
+                <span class="sr-only">Page </span>
+                {n}
+              </a>
+            )
+          )}
+          {page.currentPage < page.lastPage && (
+            <a href={pageHref(page.currentPage + 1)} class="btn btn-sm" rel="next">
+              Next →
+            </a>
+          )}
+        </nav>
+      )
+    }
+  </main>
+</Layout>

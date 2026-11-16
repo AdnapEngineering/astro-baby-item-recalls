@@ -40,7 +40,8 @@ try {
     db,
     {
       RecallID: 2,
-      Title: 'Bobo recalls strollers due to fall hazard',
+      // Also a bassinet, so with PRODUCT_PAGE_SIZE=1 below the sleep type spans two pages.
+      Title: 'Bobo recalls stroller and bassinet sets due to fall hazard',
       RecallDate: '2026-09-01T00:00:00',
       Hazards: [{ Name: 'The frame can collapse, posing a fall hazard.' }],
     },
@@ -52,7 +53,12 @@ try {
   if (typeof file !== 'string' || !file) throw new Error('Test database file not found');
   const build = spawnSync('npm', ['run', 'build'], {
     stdio: 'inherit',
-    env: { ...process.env, DATABASE_URL: `file:${file}`, DATABASE_AUTH_TOKEN: '' },
+    env: {
+      ...process.env,
+      DATABASE_URL: `file:${file}`,
+      DATABASE_AUTH_TOKEN: '',
+      PRODUCT_PAGE_SIZE: '1',
+    },
   });
   if (build.status !== 0) throw new Error('Accessibility fixture build failed');
 

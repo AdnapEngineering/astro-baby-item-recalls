@@ -11,6 +11,7 @@ const routes = [
   'hazards/entrapment/',
   'products/',
   'products/sleep/',
+  'products/sleep/2/',
   'products/stroller/',
 ];
 const tags = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa', 'best-practice'];
@@ -89,11 +90,23 @@ test('product type filter reads from and writes to the URL', async ({ page }) =>
   await expect(type).toHaveValue('stroller');
   await expect(page.getByRole('status')).toHaveText('1 of 2 recalls match.');
   await type.selectOption('sleep');
-  await expect(page.getByRole('status')).toHaveText('1 of 2 recalls match.');
+  await expect(page.getByRole('status')).toHaveText('2 of 2 recalls match.');
   await expect(page).toHaveURL(/[?&]type=sleep\b/);
   await type.selectOption('');
   await expect(page.getByRole('status')).toHaveText('2 recalls, newest first.');
   await expect(page).not.toHaveURL(/type=/);
+});
+
+test('product type pages link to each other in order', async ({ page }) => {
+  await page.goto('products/sleep/');
+  const pages = page.getByRole('navigation', { name: 'Pages' });
+  await expect(pages.getByRole('link', { name: 'Page 1' })).toHaveAttribute('aria-current', 'page');
+  await pages.getByRole('link', { name: 'Next →' }).click();
+  await expect(page).toHaveURL(/products\/sleep\/2\/$/);
+  await expect(page.getByText('showing 2–2')).toBeVisible();
+  await expect(pages.getByRole('link', { name: 'Next →' })).toHaveCount(0);
+  await pages.getByRole('link', { name: '← Previous' }).click();
+  await expect(page).toHaveURL(/products\/sleep\/$/);
 });
 
 test('photo slider moves between photos by button and keeps focus at the ends', async ({
