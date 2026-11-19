@@ -148,3 +148,17 @@ export function toRecallSummary(detail: RecallDetail): RecallSummary {
     productIdentifiers: detail.productIdentifiers,
   };
 }
+
+/**
+ * Throws when a CI build finds no recalls, so an empty site is never published over the live
+ * one. Local builds against an empty database still succeed and show the empty states.
+ */
+export function assertRecallsLoaded(details: RecallDetail[], ci = Boolean(process.env.CI)) {
+  if (ci && details.length === 0) {
+    throw new Error(
+      'The recall database returned no recalls. Refusing to build an empty site in CI; ' +
+        'check the database secrets and that the ingest has run.'
+    );
+  }
+  return details;
+}

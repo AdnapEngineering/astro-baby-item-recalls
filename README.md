@@ -72,7 +72,7 @@ DATABASE_URL=libsql://your-database.turso.io
 DATABASE_AUTH_TOKEN=your-token
 ```
 
-Both are optional locally — without `DATABASE_URL` the client falls back to a local SQLite file at `file:./data/recalls.db`. Note that this fallback is also what makes a missing credential fail confusingly in CI: the build succeeds at connecting and then finds no tables.
+Both are optional locally — without `DATABASE_URL` the client falls back to a local SQLite file at `file:./data/recalls.db`. The fallback is skipped in CI (where `CI` is set): a missing `DATABASE_URL` stops the build with a clear error, and a CI build that finds no recalls fails rather than publishing an empty site.
 
 For an existing database, apply the files in [`src/db/migrations/`](src/db/migrations/) in order, once each, **before** deploying the code that needs them — the ingest and the build both fail against a database missing a column the schema declares. Then run a wider ingest, such as `INGEST_DAYS=200 npm run ingest`, to fill the new columns (product identifiers, the full photo list, company names) for existing recalls in that date window. Recalls outside the window keep working: they show their single stored photo.
 
