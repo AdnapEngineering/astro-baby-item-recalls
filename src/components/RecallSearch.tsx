@@ -1,4 +1,4 @@
-import { useDeferredValue, useEffect, useMemo, useState } from 'react';
+import { useDeferredValue, useEffect, useMemo, useRef, useState } from 'react';
 import { filterRecalls, type SearchEntry } from '../lib/search';
 import RecallListItem from './RecallListItem';
 
@@ -17,6 +17,7 @@ export default function RecallSearch({ entries, hazards, types }: Props) {
   const [hazard, setHazard] = useState('');
   const [type, setType] = useState('');
   const [ready, setReady] = useState(false);
+  const searchInput = useRef<HTMLInputElement>(null);
 
   // ?q=, ?hazard= and ?type= let a search be bookmarked or shared, and let the home page's search
   // box hand off to this page. Read after hydration rather than in useState's initializer:
@@ -58,6 +59,23 @@ export default function RecallSearch({ entries, hazards, types }: Props) {
   );
   const filtered = deferredQuery.trim() !== '' || hazard !== '' || type !== '';
 
+  // One chip per active filter, so a filter that arrived in a shared link is visible
+  // and removable without hunting through the form.
+  const chips: { key: keyof Filters; label: string }[] = [];
+  if (query.trim()) chips.push({ key: 'query', label: `“${query.trim()}”` });
+  const typeLabel = types.find(t => t.slug === type)?.label;
+  if (typeLabel) chips.push({ key: 'type', label: `Product: ${typeLabel}` });
+  const hazardLabel = hazards.find(h => h.slug === hazard)?.label;
+  if (hazardLabel) chips.push({ key: 'hazard', label: `Hazard: ${hazardLabel}` });
+
+  // The button that was pressed disappears with its filter, so focus moves to the search box
+  // rather than falling back to the page body.
+  function clear(changes: Partial<Filters>) {
+    update(changes);
+    searchInput.current?.focus();
+  }
+  const clearAll = () => clear({ query: '', hazard: '', type: '' });
+
   return (
     <div>
       <form
@@ -71,6 +89,7 @@ export default function RecallSearch({ entries, hazards, types }: Props) {
         <label className="min-w-0 flex-1">
           <span className="mb-1 block font-medium">Search by product, brand, or store</span>
           <input
+            ref={searchInput}
             type="search"
             aria-controls="recall-results"
             className="input w-full"
@@ -113,6 +132,32 @@ export default function RecallSearch({ entries, hazards, types }: Props) {
         </label>
       </form>
 
+      {ready && chips.length > 0 && (
+        <div
+          className="mb-3 flex flex-wrap items-center gap-2"
+          aria-label="Active filters"
+          role="group"
+        >
+          {chips.map(chip => (
+            <button
+              key={chip.key}
+              type="button"
+              className="btn btn-sm btn-outline"
+              onClick={() => clear({ [chip.key]: '' })}
+            >
+              <span className="sr-only">Remove filter </span>
+              {chip.label}
+              <span aria-hidden="true"> ×</span>
+            </button>
+          ))}
+          {chips.length > 1 && (
+            <button type="button" className="btn btn-sm btn-ghost" onClick={clearAll}>
+              Clear all filters
+            </button>
+          )}
+        </div>
+      )}
+
       <p id="search-help" hidden={!ready} className="mb-3 text-sm">
         Results update as you type or choose a filter.
       </p>
@@ -145,6 +190,11 @@ export default function RecallSearch({ entries, hazards, types }: Props) {
               </a>
               .
             </span>
+            {filtered && (
+              <button type="button" className="btn btn-sm" onClick={clearAll}>
+                Clear filters
+              </button>
+            )}
           </div>
         ) : (
           <ul className="space-y-3">

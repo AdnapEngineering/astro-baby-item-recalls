@@ -98,6 +98,25 @@ test('product type filter reads from and writes to the URL', async ({ page }) =>
   await expect(page).not.toHaveURL(/type=/);
 });
 
+test('active filters show as chips that can be removed one at a time or all at once', async ({
+  page,
+}) => {
+  await page.goto('recalls/?q=acme&hazard=entrapment');
+  const chips = page.getByRole('group', { name: 'Active filters' });
+  await expect(page.getByRole('status')).toHaveText('1 of 2 recalls match.');
+  await chips.getByRole('button', { name: 'Remove filter Hazard: Entrapment' }).click();
+  await expect(page).not.toHaveURL(/hazard=/);
+  await expect(page.getByRole('searchbox')).toBeFocused();
+  await expect(chips.getByRole('button', { name: 'Clear all filters' })).toHaveCount(0);
+
+  await page.getByRole('searchbox').fill('no-such-product');
+  await page.getByRole('button', { name: 'Clear filters' }).click();
+  await expect(page.getByRole('status')).toHaveText('2 recalls, newest first.');
+  await expect(chips).toHaveCount(0);
+  await expect(page.getByRole('searchbox')).toBeFocused();
+  expect((await new AxeBuilder({ page }).withTags(tags).analyze()).violations).toEqual([]);
+});
+
 for (const section of ['products/sleep', 'hazards/fall']) {
   test(`${section} pages link to each other in order`, async ({ page }) => {
     await page.goto(`${section}/`);
