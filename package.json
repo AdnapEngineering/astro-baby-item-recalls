@@ -16,7 +16,8 @@
     "format": "prettier . --write",
     "format:check": "prettier . --check",
     "prepare": "git config core.hooksPath .githooks",
-    "ingest": "tsx scripts/ingest.ts"
+    "ingest": "tsx scripts/ingest.ts",
+    "thumbnails": "tsx scripts/build-thumbnails.ts"
   },
   "dependencies": {
     "@astrojs/react": "^6.0.1",
@@ -30,9 +31,9 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
+    "@astrojs/check": "^0.9.10",
     "@axe-core/playwright": "^4.10.2",
     "@playwright/test": "^1.56.0",
-    "@astrojs/check": "^0.9.10",
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
     "daisyui": "^5.7.4",
@@ -40,6 +41,7 @@
     "drizzle-kit": "^0.31.10",
     "prettier": "^3.9.6",
     "prettier-plugin-astro": "^0.14.1",
+    "sharp": "^0.35.3",
     "tsx": "^4.23.5",
     "typescript": "^6.0.3",
     "vitest": "^5.0.3"

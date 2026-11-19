@@ -51,6 +51,23 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      # Thumbnails persist between runs (a new key each run, restored from the latest), so a
+      # build only downloads and resizes photos of recalls it has not seen before.
+      - name: Restore list thumbnails
+        uses: actions/cache@v6
+        with:
+          path: public/thumbs
+          key: thumbs-${{ github.run_id }}
+          restore-keys: thumbs-
+
+      # Skips any photo that fails to download, so a broken CPSC image never stops a deploy;
+      # that row shows the original photo instead.
+      - name: Build list thumbnails
+        run: npm run thumbnails
+        env:
+          DATABASE_URL: ${{ secrets.TURSO_DATABASE_URL }}
+          DATABASE_AUTH_TOKEN: ${{ secrets.TURSO_AUTH_TOKEN }}
+
       - name: Build with Astro
         run: npm run build
         # getStaticPaths queries Turso at build time; without these the client falls back
