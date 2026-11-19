@@ -1,6 +1,6 @@
 import { db } from '../db/client';
 import { hazards, recalls, remedyOptions } from '../db/schema';
-import { assembleRecallDetails, type RecallDetail } from './recall-details';
+import { assembleRecallDetails, assertRecallsLoaded, type RecallDetail } from './recall-details';
 
 let cached: Promise<RecallDetail[]> | undefined;
 
@@ -16,7 +16,7 @@ export function getRecallDetails(): Promise<RecallDetail[]> {
     db.select().from(hazards),
     db.select().from(remedyOptions),
   ]).then(([recallRows, hazardRows, optionRows]) =>
-    assembleRecallDetails(recallRows, hazardRows, optionRows)
+    assertRecallsLoaded(assembleRecallDetails(recallRows, hazardRows, optionRows))
   );
   return cached;
 }

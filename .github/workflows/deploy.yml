@@ -22,16 +22,21 @@ concurrency:
 
 jobs:
   # The same checks pull requests get. Nothing here touches the database, so a type error
-  # or failing test stops the deploy before the build spends time querying Turso.
+  # or failing test stops a push's deploy before the build spends time querying Turso.
+  # Skipped on the daily post-ingest rebuild: the code on main has not changed since its
+  # push already ran these checks, and only the data is new.
   checks:
-    # workflow_run fires on completion regardless of outcome — skip rebuilds after a
-    # failed ingest, which would otherwise republish against a half-written database.
-    # The build job needs this one, so skipping here skips the whole deploy.
-    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
+    if: github.event_name != 'workflow_run'
     uses: ./.github/workflows/ci.yml
 
   build:
     needs: checks
+    # Builds when the checks passed, or when they were skipped for a post-ingest rebuild.
+    # workflow_run fires on completion regardless of outcome, so a failed ingest still skips
+    # the rebuild, which would otherwise republish against a half-written database.
+    if: >-
+      !cancelled() && (needs.checks.result == 'success' ||
+      (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success'))
     runs-on: ubuntu-latest
     steps:
       - name: Checkout your repository using git
@@ -61,6 +66,8 @@ jobs:
 
   deploy:
     needs: build
+    # Explicit because the default success() also looks at the skipped checks job.
+    if: ${{ !cancelled() && needs.build.result == 'success' }}
     runs-on: ubuntu-latest
     environment:
       name: github-pages

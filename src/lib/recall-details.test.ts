@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import type { RecallRow } from '../db/schema';
+import type { RecallDetail } from './recall-details';
 import {
   assembleRecallDetails,
+  assertRecallsLoaded,
   dropDuplicateRecalls,
   recallImages,
   toRecallSummary,
@@ -233,5 +235,19 @@ describe('company names in search', () => {
     );
     const found = filterRecalls(details.map(toSearchEntry), 'papablic');
     expect(found.map(entry => entry.recallId)).toEqual([1]);
+  });
+});
+describe('assertRecallsLoaded', () => {
+  it('refuses an empty result in CI', () => {
+    expect(() => assertRecallsLoaded([], true)).toThrow(/no recalls/);
+  });
+
+  it('allows an empty result outside CI, where the pages show their empty states', () => {
+    expect(assertRecallsLoaded([], false)).toEqual([]);
+  });
+
+  it('passes recalls through unchanged', () => {
+    const details = [{ recallId: 1 } as RecallDetail];
+    expect(assertRecallsLoaded(details, true)).toBe(details);
   });
 });
