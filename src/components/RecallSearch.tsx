@@ -1,9 +1,17 @@
 import { useDeferredValue, useEffect, useMemo, useRef, useState } from 'react';
+import type { RecallSummary } from '../lib/recall-details';
 import { filterRecalls, type SearchEntry } from '../lib/search';
 import RecallListItem from './RecallListItem';
 
 interface Props {
-  entries: SearchEntry[];
+  /** The newest recalls, rendered on the server so the page has content before any fetch. */
+  initial: RecallSummary[];
+  /** How many recalls the full index holds. */
+  total: number;
+  /** Rows shown at first, and added by each "Show more". */
+  pageSize: number;
+  /** URL of the static JSON search index (every recall, with its search text). */
+  indexUrl: string;
   hazards: { slug: string; label: string }[];
   types: { slug: string; label: string }[];
 }
@@ -11,13 +19,48 @@ interface Props {
 type Filters = { query: string; hazard: string; type: string };
 
 // Filters build-time data entirely in the browser — no API or DB calls — so search works
-// on the static host and stays instant. Without JavaScript the full list still renders.
-export default function RecallSearch({ entries, hazards, types }: Props) {
+// on the static host and stays instant. The page carries only the first rows; the full index
+// is a separate static JSON file, fetched once and cached by the browser, so it is neither
+// inlined twice (rows plus island props) nor rendered in full before anyone searches.
+export default function RecallSearch({
+  initial,
+  total,
+  pageSize,
+  indexUrl,
+  hazards,
+  types,
+}: Props) {
   const [query, setQuery] = useState('');
   const [hazard, setHazard] = useState('');
   const [type, setType] = useState('');
   const [ready, setReady] = useState(false);
   const searchInput = useRef<HTMLInputElement>(null);
+  const [entries, setEntries] = useState<SearchEntry[] | null>(null);
+  const [loadFailed, setLoadFailed] = useState(false);
+  const [visible, setVisible] = useState(pageSize);
+  const list = useRef<HTMLUListElement>(null);
+  const focusRow = useRef<number | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch(indexUrl)
+      .then(response => {
+        if (!response.ok) throw new Error(`Search index returned ${response.status}`);
+        return response.json() as Promise<SearchEntry[]>;
+      })
+      .then(data => !cancelled && setEntries(data))
+      .catch(() => !cancelled && setLoadFailed(true));
+    return () => {
+      cancelled = true;
+    };
+  }, [indexUrl]);
+
+  // "Show more" can disappear once everything is shown, so focus moves to the first new row.
+  useEffect(() => {
+    if (focusRow.current === null) return;
+    list.current?.children[focusRow.current]?.querySelector('a')?.focus();
+    focusRow.current = null;
+  }, [visible]);
 
   // ?q=, ?hazard= and ?type= let a search be bookmarked or shared, and let the home page's search
   // box hand off to this page. Read after hydration rather than in useState's initializer:
@@ -36,6 +79,7 @@ export default function RecallSearch({ entries, hazards, types }: Props) {
   // Takes only the filters that changed; the rest keep their current value.
   function update(changes: Partial<Filters>) {
     const next = { query, hazard, type, ...changes };
+    setVisible(pageSize);
     setQuery(next.query);
     setHazard(next.hazard);
     setType(next.type);
@@ -54,10 +98,25 @@ export default function RecallSearch({ entries, hazards, types }: Props) {
   // Keeps typing responsive: the list re-renders at lower priority than the input.
   const deferredQuery = useDeferredValue(query);
   const results = useMemo(
-    () => filterRecalls(entries, deferredQuery, hazard || null, type || null),
+    () => entries && filterRecalls(entries, deferredQuery, hazard || null, type || null),
     [entries, deferredQuery, hazard, type]
   );
   const filtered = deferredQuery.trim() !== '' || hazard !== '' || type !== '';
+  // Until the index arrives, an unfiltered view shows the server-rendered rows; a filtered
+  // one has nothing to show yet.
+  const waiting = results === null && filtered && !loadFailed;
+  const shown = results ? results.slice(0, visible) : filtered && !loadFailed ? [] : initial;
+  const remaining = results ? results.length - shown.length : 0;
+
+  function showMore() {
+    focusRow.current = visible;
+    setVisible(v => v + pageSize);
+  }
+
+  let status: string;
+  if (results && filtered) status = `${results.length} of ${total} recalls match.`;
+  else if (waiting) status = 'Loading recalls…';
+  else status = `${total} recalls, newest first.`;
 
   // One chip per active filter, so a filter that arrived in a shared link is visible
   // and removable without hunting through the form.
@@ -163,19 +222,28 @@ export default function RecallSearch({ entries, hazards, types }: Props) {
       </p>
       <noscript>
         <p className="mb-4">
-          Filtering requires JavaScript. All collected recalls are listed below; use your browser's
-          Find command to search this page.
+          Filtering requires JavaScript.{' '}
+          {total > initial.length
+            ? `The newest ${initial.length} of ${total} recalls are listed below; browse by product or hazard to see the rest.`
+            : "All collected recalls are listed below; use your browser's Find command to search this page."}
         </p>
       </noscript>
 
+      {loadFailed && (
+        <div className="alert alert-warning mb-4" role="alert">
+          <span>
+            Search is unavailable because the recall list could not be loaded. Reload the page to
+            try again, or browse recalls by product or hazard.
+          </span>
+        </div>
+      )}
+
       <p className="mb-4 text-sm text-base-content/70" role="status" aria-atomic="true">
-        {filtered
-          ? `${results.length} of ${entries.length} recalls match.`
-          : `${entries.length} recalls, newest first.`}
+        {status}
       </p>
 
-      <div id="recall-results" aria-busy={query !== deferredQuery}>
-        {results.length === 0 ? (
+      <div id="recall-results" aria-busy={query !== deferredQuery || waiting}>
+        {waiting ? null : shown.length === 0 ? (
           <div className="alert">
             <span>
               No stored recalls match. Try fewer or different words — and remember this list only
@@ -197,11 +265,21 @@ export default function RecallSearch({ entries, hazards, types }: Props) {
             )}
           </div>
         ) : (
-          <ul className="space-y-3">
-            {results.map(recall => (
-              <RecallListItem key={recall.recallId} recall={recall} />
-            ))}
-          </ul>
+          <>
+            <ul className="space-y-3" ref={list}>
+              {shown.map(recall => (
+                <RecallListItem key={recall.recallId} recall={recall} />
+              ))}
+            </ul>
+            {remaining > 0 && (
+              <p className="mt-4 flex flex-wrap items-center justify-center gap-3">
+                <button type="button" className="btn" onClick={showMore}>
+                  Show {Math.min(pageSize, remaining)} more
+                </button>
+                <span className="text-sm text-base-content/70">{remaining} not shown</span>
+              </p>
+            )}
+          </>
         )}
       </div>
     </div>
