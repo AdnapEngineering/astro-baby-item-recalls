@@ -85,6 +85,20 @@ test('search is keyboard operable and announces results without moving focus', a
   await expect(hazard).toBeFocused();
 });
 
+test('search shows the first page and reveals more on request, moving focus to the new rows', async ({
+  page,
+}) => {
+  await page.goto('recalls/');
+  const rows = page.locator('#recall-results li');
+  await expect(rows).toHaveCount(1);
+  const more = page.getByRole('button', { name: 'Show 1 more' });
+  await more.click();
+  await expect(rows).toHaveCount(2);
+  await expect(more).toHaveCount(0);
+  await expect(rows.nth(1).getByRole('link')).toBeFocused();
+  expect((await new AxeBuilder({ page }).withTags(tags).analyze()).violations).toEqual([]);
+});
+
 test('product type filter reads from and writes to the URL', async ({ page }) => {
   await page.goto('recalls/?type=stroller');
   const type = page.getByRole('combobox', { name: 'Product type' });
@@ -193,7 +207,7 @@ test('without JavaScript every photo is still in the page and no dead buttons ap
   }
 });
 
-test('without JavaScript all recalls remain readable and no nonfunctional filters appear', async ({
+test('without JavaScript the newest recalls remain readable and no nonfunctional filters appear', async ({
   browser,
 }) => {
   const context = await browser.newContext({ javaScriptEnabled: false });
@@ -203,7 +217,9 @@ test('without JavaScript all recalls remain readable and no nonfunctional filter
     await expect(page.getByRole('searchbox')).toBeHidden();
     await expect(page.locator('noscript p')).toBeVisible();
     await expect(page.locator('noscript p')).toContainText('Filtering requires JavaScript.');
-    await expect(page.getByRole('main').getByRole('heading', { level: 2 })).toHaveCount(2);
+    // The fixture build pages at one recall, so only the newest is in the page.
+    await expect(page.locator('noscript p')).toContainText('The newest 1 of 2 recalls');
+    await expect(page.getByRole('main').getByRole('heading', { level: 2 })).toHaveCount(1);
   } finally {
     await context.close();
   }
