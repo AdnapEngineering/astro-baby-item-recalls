@@ -122,6 +122,18 @@ test('hazard pages link into search filtered to that hazard', async ({ page }) =
   await expect(page.getByRole('status')).toHaveText('1 of 2 recalls match.');
 });
 
+test('recall pages lead with what to do and jump to the company contact', async ({ page }) => {
+  await page.goto('recalls/1/');
+  const headings = await page
+    .getByRole('main')
+    .getByRole('heading', { level: 2 })
+    .allTextContents();
+  expect(headings.slice(0, 2)).toEqual(['What to do', 'Products and model numbers']);
+  await page.getByRole('link', { name: 'Company contact details' }).click();
+  await expect(page).toHaveURL(/#contact$/);
+  await expect(page.locator('#contact')).toBeInViewport();
+});
+
 test('photo slider moves between photos by button and keeps focus at the ends', async ({
   page,
 }) => {

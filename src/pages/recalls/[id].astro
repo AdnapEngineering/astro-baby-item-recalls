@@ -80,10 +80,36 @@ const facts = [
         </div>
       </header>
 
+      {/* First: a parent who owns the item needs the remedy before the background. */}
+      {
+        (recall.remedy || recall.remedyOptions.length > 0 || recall.consumerContact) && (
+          <section
+            class="mb-6 rounded-box border border-success bg-success/10 p-4"
+            aria-labelledby="what-to-do"
+          >
+            <h2 id="what-to-do" class="mb-2 text-xl font-semibold">
+              What to do
+            </h2>
+            {recall.remedyOptions.length > 0 && (
+              <ul class="mb-2 flex flex-wrap gap-2" aria-label="Remedy options">
+                {recall.remedyOptions.map(option => (
+                  <li class="badge badge-success">{option}</li>
+                ))}
+              </ul>
+            )}
+            {recall.remedy && <p class="mb-2">{recall.remedy}</p>}
+            {recall.consumerContact && (
+              <a href="#contact" class="link link-primary inline-flex min-h-6 items-center">
+                Company contact details <span aria-hidden="true">↓</span>
+              </a>
+            )}
+          </section>
+        )
+      }
+
       <PhotoSlider photos={photos} title={recall.title} />
 
-      {recall.description && <p class="mb-6">{recall.description}</p>}
-
+      {/* Next to the photos so the label and the model numbers can be checked together. */}
       {
         recall.productIdentifiers.length > 0 && (
           <section class="mb-6">
@@ -105,6 +131,8 @@ const facts = [
         )
       }
 
+      {recall.description && <p class="mb-6">{recall.description}</p>}
+
       {
         recall.hazardTexts.length > 0 && (
           <section class="mb-6">
@@ -112,22 +140,6 @@ const facts = [
             {recall.hazardTexts.map(text => (
               <p class="mb-2">{text}</p>
             ))}
-          </section>
-        )
-      }
-
-      {
-        (recall.remedy || recall.remedyOptions.length > 0) && (
-          <section class="mb-6 rounded-box border border-success bg-success/10 p-4">
-            <h2 class="mb-2 text-xl font-semibold">What to do</h2>
-            {recall.remedyOptions.length > 0 && (
-              <ul class="mb-2 flex flex-wrap gap-2" aria-label="Remedy options">
-                {recall.remedyOptions.map(option => (
-                  <li class="badge badge-success">{option}</li>
-                ))}
-              </ul>
-            )}
-            {recall.remedy && <p>{recall.remedy}</p>}
           </section>
         )
       }
@@ -150,7 +162,7 @@ const facts = [
 
       {
         recall.consumerContact && (
-          <section class="mb-6">
+          <section class="mb-6" id="contact" tabindex="-1">
             <h2 class="mb-2 text-xl font-semibold">Contact the company</h2>
             <p class="whitespace-pre-line">{recall.consumerContact}</p>
           </section>
