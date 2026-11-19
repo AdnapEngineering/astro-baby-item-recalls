@@ -1,5 +1,7 @@
 # build output
 dist/
+# list thumbnails, generated before the deploy build (npm run thumbnails)
+public/thumbs/
 test-results/
 playwright-report/
 

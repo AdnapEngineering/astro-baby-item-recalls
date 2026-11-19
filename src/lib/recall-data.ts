@@ -1,6 +1,13 @@
 import { db } from '../db/client';
 import { hazards, recalls, remedyOptions } from '../db/schema';
+import { withBase } from './nav';
 import { assembleRecallDetails, assertRecallsLoaded, type RecallDetail } from './recall-details';
+import { thumbnailPath } from './thumbnails';
+
+function withThumbnail(detail: RecallDetail): RecallDetail {
+  const path = thumbnailPath(detail.imageUrl);
+  return path ? { ...detail, thumbnailUrl: withBase(path) } : detail;
+}
 
 let cached: Promise<RecallDetail[]> | undefined;
 
@@ -16,7 +23,9 @@ export function getRecallDetails(): Promise<RecallDetail[]> {
     db.select().from(hazards),
     db.select().from(remedyOptions),
   ]).then(([recallRows, hazardRows, optionRows]) =>
-    assertRecallsLoaded(assembleRecallDetails(recallRows, hazardRows, optionRows))
+    assertRecallsLoaded(
+      assembleRecallDetails(recallRows, hazardRows, optionRows).map(withThumbnail)
+    )
   );
   return cached;
 }

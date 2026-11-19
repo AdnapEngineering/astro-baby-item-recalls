@@ -39,23 +39,24 @@ Product types (cribs and sleep, car seats, strollers, feeding, bath, furniture, 
 
 ## Project layout
 
-| Path                        | What lives there                                                                  |
-| --------------------------- | --------------------------------------------------------------------------------- |
-| `src/pages/`                | Routes — home, about, recall search/detail, product and hazard index/detail pages |
-| `src/components/`           | Header/footer, the shared recall list row, and the search island                  |
-| `src/db/schema.ts`          | Drizzle schema: `recalls`, `hazards`, `remedy_options`                            |
-| `src/db/client.ts`          | libSQL client; reads `DATABASE_URL` / `DATABASE_AUTH_TOKEN`                       |
-| `src/lib/recalls.ts`        | CPSC API parsing, child-product matching, hazard tag and product-type tables      |
-| `src/lib/recall-data.ts`    | The build-time DB load every page shares (memoised per build)                     |
-| `src/lib/recall-details.ts` | Pure reshaping of DB rows into page data; `hazard-groups.ts` and `search.ts` too  |
-| `src/lib/product-types.ts`  | Build-time grouping of recalls by product type, with the coverage log line        |
-| `src/db/migrations/`        | Hand-written SQL migrations, applied manually to an existing database             |
-| `scripts/ingest.ts`         | The ingest job — fetches CPSC recalls and upserts into Turso                      |
-| `scripts/fetch-recalls.ts`  | Fetches the window in 7-day chunks, retrying CPSC outages with backoff            |
-| `scripts/upsert-recall.ts`  | One recall's writes, as a single atomic `db.batch`                                |
-| `scripts/remove-stale.ts`   | Removes recalls CPSC has withdrawn or whose RecallID it reused for another recall |
-| `e2e/`                      | Playwright + axe accessibility checks, run against a fixture database             |
-| `drizzle.config.ts`         | Drizzle Kit config for generating/applying migrations                             |
+| Path                          | What lives there                                                                             |
+| ----------------------------- | -------------------------------------------------------------------------------------------- |
+| `src/pages/`                  | Routes — home, about, recall search/detail, product and hazard index/detail pages            |
+| `src/components/`             | Header/footer, the shared recall list row, and the search island                             |
+| `src/db/schema.ts`            | Drizzle schema: `recalls`, `hazards`, `remedy_options`                                       |
+| `src/db/client.ts`            | libSQL client; reads `DATABASE_URL` / `DATABASE_AUTH_TOKEN`                                  |
+| `src/lib/recalls.ts`          | CPSC API parsing, child-product matching, hazard tag and product-type tables                 |
+| `src/lib/recall-data.ts`      | The build-time DB load every page shares (memoised per build)                                |
+| `src/lib/recall-details.ts`   | Pure reshaping of DB rows into page data; `hazard-groups.ts` and `search.ts` too             |
+| `src/lib/product-types.ts`    | Build-time grouping of recalls by product type, with the coverage log line                   |
+| `src/db/migrations/`          | Hand-written SQL migrations, applied manually to an existing database                        |
+| `scripts/ingest.ts`           | The ingest job — fetches CPSC recalls and upserts into Turso                                 |
+| `scripts/fetch-recalls.ts`    | Fetches the window in 7-day chunks, retrying CPSC outages with backoff                       |
+| `scripts/upsert-recall.ts`    | One recall's writes, as a single atomic `db.batch`                                           |
+| `scripts/remove-stale.ts`     | Removes recalls CPSC has withdrawn or whose RecallID it reused for another recall            |
+| `scripts/build-thumbnails.ts` | Pre-build step: resizes each list photo to a small WebP in `public/thumbs/` (skips failures) |
+| `e2e/`                        | Playwright + axe accessibility checks, run against a fixture database                        |
+| `drizzle.config.ts`           | Drizzle Kit config for generating/applying migrations                                        |
 
 ## Local development
 
@@ -75,6 +76,8 @@ DATABASE_AUTH_TOKEN=your-token
 Both are optional locally — without `DATABASE_URL` the client falls back to a local SQLite file at `file:./data/recalls.db`. The fallback is skipped in CI (where `CI` is set): a missing `DATABASE_URL` stops the build with a clear error, and a CI build that finds no recalls fails rather than publishing an empty site.
 
 For an existing database, apply the files in [`src/db/migrations/`](src/db/migrations/) in order, once each, **before** deploying the code that needs them — the ingest and the build both fail against a database missing a column the schema declares. Then run a wider ingest, such as `INGEST_DAYS=200 npm run ingest`, to fill the new columns (product identifiers, the full photo list, company names) for existing recalls in that date window. Recalls outside the window keep working: they show their single stored photo.
+
+List rows use small WebP thumbnails when `public/thumbs/` has them. The deploy workflow runs `npm run thumbnails` before building and caches the folder between runs; without it (local and fixture builds) rows show the original CPSC photos.
 
 ```bash
 npm run dev      # dev server

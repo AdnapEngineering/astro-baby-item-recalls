@@ -22,6 +22,8 @@ export type RecallDetail = RecallRow & {
   remedyOptions: string[];
   /** Product names and model numbers supplied by CPSC, in API order. */
   productIdentifiers: ProductIdentifier[];
+  /** A small copy of the hero photo for list rows, when the build generated one. */
+  thumbnailUrl?: string | null;
 };
 
 /**
@@ -139,7 +141,7 @@ export function toRecallSummary(detail: RecallDetail): RecallSummary {
     title: detail.title,
     recallDate: detail.recallDate,
     dateLabel: formatRecallDate(detail.recallDate),
-    imageUrl: detail.imageUrl,
+    imageUrl: detail.thumbnailUrl ?? detail.imageUrl,
     imageAlt: detail.imageCaption || detail.title,
     remedy: detail.remedy,
     remedyOptions: detail.remedyOptions,

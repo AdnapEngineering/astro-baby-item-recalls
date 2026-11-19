@@ -21,7 +21,9 @@ const many = photos.length > 1;
     >
       {/* A scroll-snap track: it swipes and scrolls on its own, so every photo stays
           reachable without JavaScript. The script below only adds the buttons and counter.
-          Focusable because a scrollable region must be operable from the keyboard. */}
+          Focusable because a scrollable region must be operable from the keyboard.
+          The first photo is usually the page's largest element, so it loads eagerly and first;
+          the rest stay lazy. */}
       <div
         class="photo-track flex snap-x snap-mandatory overflow-x-auto rounded-box bg-base-200"
         tabindex={many ? 0 : undefined}
@@ -35,7 +37,8 @@ const many = photos.length > 1;
               src={photo.url}
               alt={photo.caption || (many ? `${title} — photo ${index + 1}` : title)}
               class="mx-auto h-72 max-w-full object-contain sm:h-96"
-              loading="lazy"
+              loading={index === 0 ? 'eager' : 'lazy'}
+              fetchpriority={index === 0 ? 'high' : undefined}
               decoding="async"
             />
             {photo.caption && (
