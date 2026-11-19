@@ -1,3 +1,4 @@
+import { summarizeProducts } from '../lib/format';
 import { withBase } from '../lib/nav';
 import type { RecallSummary } from '../lib/recall-details';
 
@@ -12,6 +13,7 @@ export default function RecallListItem({
   headingLevel?: 2 | 3;
 }) {
   const Heading = `h${headingLevel}` as const;
+  const products = summarizeProducts(recall.productIdentifiers);
   return (
     <li className="surface card card-side items-start gap-3 p-4 sm:gap-4">
       {recall.imageUrl && (
@@ -52,17 +54,12 @@ export default function RecallListItem({
             </span>
           ))}
         </p>
-        {recall.productIdentifiers.length > 0 && (
+        {products.text && (
           <p className="text-sm">
-            <span className="font-semibold">Product:</span>{' '}
-            {recall.productIdentifiers
-              .map(product =>
-                [product.name, product.model && `Model ${product.model}`]
-                  .filter(Boolean)
-                  .join(' · ')
-              )
-              .filter(Boolean)
-              .join('; ')}
+            <span className="font-semibold">Product:</span> {products.text}
+            {products.more > 0 && (
+              <span className="text-base-content/70"> +{products.more} more</span>
+            )}
           </p>
         )}
         {recall.remedyOptions.length > 0 && (
@@ -70,7 +67,8 @@ export default function RecallListItem({
             <span className="font-semibold">Remedy:</span> {recall.remedyOptions.join(', ')}
           </p>
         )}
-        {recall.remedy && <p className="text-sm">{recall.remedy}</p>}
+        {/* Clipped to two lines; the recall page carries the full remedy. */}
+        {recall.remedy && <p className="line-clamp-2 text-sm">{recall.remedy}</p>}
       </div>
     </li>
   );
