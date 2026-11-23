@@ -1,6 +1,6 @@
 import { useDeferredValue, useEffect, useMemo, useRef, useState } from 'react';
 import type { RecallSummary } from '../lib/recall-details';
-import { filterRecalls, type SearchEntry } from '../lib/search';
+import { filterRecalls, REMEDIES, type SearchEntry } from '../lib/search';
 import RecallListItem from './RecallListItem';
 
 interface Props {
@@ -16,7 +16,7 @@ interface Props {
   types: { slug: string; label: string }[];
 }
 
-type Filters = { query: string; hazard: string; type: string };
+type Filters = { query: string; hazard: string; type: string; remedy: string };
 
 // Filters build-time data entirely in the browser — no API or DB calls — so search works
 // on the static host and stays instant. The page carries only the first rows; the full index
@@ -33,6 +33,7 @@ export default function RecallSearch({
   const [query, setQuery] = useState('');
   const [hazard, setHazard] = useState('');
   const [type, setType] = useState('');
+  const [remedy, setRemedy] = useState('');
   const [ready, setReady] = useState(false);
   const searchInput = useRef<HTMLInputElement>(null);
   const [entries, setEntries] = useState<SearchEntry[] | null>(null);
@@ -62,7 +63,7 @@ export default function RecallSearch({
     focusRow.current = null;
   }, [visible]);
 
-  // ?q=, ?hazard= and ?type= let a search be bookmarked or shared, and let the home page's search
+  // URL parameters let a search be bookmarked or shared, and let the home page's search
   // box hand off to this page. Read after hydration rather than in useState's initializer:
   // the server render had no URL, and differing initial state would break hydration.
   useEffect(() => {
@@ -72,22 +73,27 @@ export default function RecallSearch({
     if (fromUrl && hazards.some(h => h.slug === fromUrl)) setHazard(fromUrl);
     const typeFromUrl = params.get('type');
     if (typeFromUrl && types.some(t => t.slug === typeFromUrl)) setType(typeFromUrl);
+    const remedyFromUrl = params.get('remedy');
+    const matchingRemedy = REMEDIES.find(r => r.toLowerCase() === remedyFromUrl);
+    if (matchingRemedy) setRemedy(matchingRemedy);
     setReady(true);
   }, []);
 
   // replaceState, not pushState: an entry per keystroke would make Back unusable.
   // Takes only the filters that changed; the rest keep their current value.
   function update(changes: Partial<Filters>) {
-    const next = { query, hazard, type, ...changes };
+    const next = { query, hazard, type, remedy, ...changes };
     setVisible(pageSize);
     setQuery(next.query);
     setHazard(next.hazard);
     setType(next.type);
+    setRemedy(next.remedy);
     const url = new URL(window.location.href);
     for (const [key, value] of [
       ['q', next.query.trim()],
       ['hazard', next.hazard],
       ['type', next.type],
+      ['remedy', next.remedy.toLowerCase()],
     ]) {
       if (value) url.searchParams.set(key, value);
       else url.searchParams.delete(key);
@@ -98,10 +104,12 @@ export default function RecallSearch({
   // Keeps typing responsive: the list re-renders at lower priority than the input.
   const deferredQuery = useDeferredValue(query);
   const results = useMemo(
-    () => entries && filterRecalls(entries, deferredQuery, hazard || null, type || null),
-    [entries, deferredQuery, hazard, type]
+    () =>
+      entries &&
+      filterRecalls(entries, deferredQuery, hazard || null, type || null, remedy || null),
+    [entries, deferredQuery, hazard, type, remedy]
   );
-  const filtered = deferredQuery.trim() !== '' || hazard !== '' || type !== '';
+  const filtered = deferredQuery.trim() !== '' || hazard !== '' || type !== '' || remedy !== '';
   // Until the index arrives, an unfiltered view shows the server-rendered rows; a filtered
   // one has nothing to show yet.
   const waiting = results === null && filtered && !loadFailed;
@@ -126,6 +134,7 @@ export default function RecallSearch({
   if (typeLabel) chips.push({ key: 'type', label: `Product: ${typeLabel}` });
   const hazardLabel = hazards.find(h => h.slug === hazard)?.label;
   if (hazardLabel) chips.push({ key: 'hazard', label: `Hazard: ${hazardLabel}` });
+  if (remedy) chips.push({ key: 'remedy', label: `Remedy: ${remedy}` });
 
   // The button that was pressed disappears with its filter, so focus moves to the search box
   // rather than falling back to the page body.
@@ -133,7 +142,7 @@ export default function RecallSearch({
     update(changes);
     searchInput.current?.focus();
   }
-  const clearAll = () => clear({ query: '', hazard: '', type: '' });
+  const clearAll = () => clear({ query: '', hazard: '', type: '', remedy: '' });
 
   return (
     <div>
@@ -185,6 +194,22 @@ export default function RecallSearch({
             {hazards.map(h => (
               <option key={h.slug} value={h.slug}>
                 {h.label}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label>
+          <span className="mb-1 block font-medium">Remedy</span>
+          <select
+            aria-controls="recall-results"
+            className="select w-full sm:w-auto"
+            value={remedy}
+            onChange={e => update({ remedy: e.target.value })}
+          >
+            <option value="">All remedies</option>
+            {REMEDIES.map(option => (
+              <option key={option} value={option}>
+                {option}
               </option>
             ))}
           </select>

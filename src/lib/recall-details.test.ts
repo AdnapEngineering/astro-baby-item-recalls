@@ -102,7 +102,11 @@ describe('filterRecalls', () => {
       recallRow(2, { title: 'Bobo Recalls Strollers', description: 'Folding stroller' }),
     ],
     [{ recallId: 2, name: 'The frame can collapse', tag: 'fall' }],
-    []
+    [
+      { recallId: 1, option: 'Refund' },
+      { recallId: 1, option: 'Replace' },
+      { recallId: 2, option: 'Repair' },
+    ]
   ).map(toSearchEntry);
 
   it('matches everything for an empty query', () => {
@@ -144,6 +148,51 @@ describe('filterRecalls', () => {
 
   it('searches product type labels', () => {
     expect(filterRecalls(entries, 'bassinets').map(e => e.recallId)).toEqual([1]);
+  });
+
+  it('combines remedy with text, type, and hazard filters', () => {
+    expect(filterRecalls(entries, '', null, null, 'Refund').map(e => e.recallId)).toEqual([1]);
+    expect(filterRecalls(entries, 'crib', null, 'sleep', 'Replace').map(e => e.recallId)).toEqual([
+      1,
+    ]);
+    expect(
+      filterRecalls(entries, 'stroller', 'fall', 'stroller', 'Repair').map(e => e.recallId)
+    ).toEqual([2]);
+    expect(filterRecalls(entries, '', 'fall', null, 'Refund')).toEqual([]);
+    expect(filterRecalls(entries, '', null, null, 'Unknown')).toEqual([]);
+  });
+
+  it('matches punctuation and model separator variants', () => {
+    const [entry] = assembleRecallDetails(
+      [
+        recallRow(3, {
+          title: 'Fisher-Price stroller',
+          productIdentifiers: [{ name: 'Seat', model: 'IS-204' }],
+        }),
+      ],
+      [],
+      []
+    ).map(toSearchEntry);
+    for (const query of [
+      'fisher price',
+      'fisherprice',
+      'IS204',
+      'IS 204',
+      'IS/204',
+      'fisher,stroller',
+    ]) {
+      expect(filterRecalls([entry], query)).toEqual([entry]);
+    }
+    expect(filterRecalls([entry], 'IS205')).toEqual([]);
+  });
+
+  it('tolerates one typo in longer words without fuzzy matching short words or models', () => {
+    for (const query of ['stroler', 'strolller', 'strollar', 'strollre']) {
+      expect(filterRecalls(entries, query).map(e => e.recallId)).toEqual([2]);
+    }
+    expect(filterRecalls(entries, 'stroler TARGET')).toEqual([]);
+    expect(filterRecalls(entries, 'strolxr')).toEqual([]);
+    expect(filterRecalls(entries, 'crab')).toEqual([]);
   });
 });
 

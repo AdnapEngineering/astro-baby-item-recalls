@@ -112,6 +112,24 @@ test('product type filter reads from and writes to the URL', async ({ page }) =>
   await expect(page).not.toHaveURL(/type=/);
 });
 
+test('remedy filter is shareable, combinable, and removable', async ({ page }) => {
+  await page.goto('recalls/?remedy=refund&q=AC123');
+  const remedy = page.getByRole('combobox', { name: 'Remedy' });
+  await expect(remedy).toHaveValue('Refund');
+  await expect(page.getByRole('status')).toHaveText('1 of 2 recalls match.');
+  await remedy.selectOption('Repair');
+  await expect(page.getByRole('status')).toHaveText('0 of 2 recalls match.');
+  await expect(page).toHaveURL(/[?&]remedy=repair\b/);
+  await page.getByRole('button', { name: 'Remove filter Remedy: Repair' }).click();
+  await expect(page).not.toHaveURL(/remedy=/);
+  await expect(page.getByRole('searchbox')).toBeFocused();
+  await expect(page.getByRole('status')).toHaveText('1 of 2 recalls match.');
+  await remedy.selectOption('Refund');
+  await page.getByRole('button', { name: 'Clear all filters' }).click();
+  await expect(page.getByRole('status')).toHaveText('2 recalls, newest first.');
+  await expect(page).not.toHaveURL(/remedy=/);
+});
+
 test('active filters show as chips that can be removed one at a time or all at once', async ({
   page,
 }) => {
